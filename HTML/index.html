@@ -22,6 +22,11 @@ function noteAt(fret, string) {
 }
 
 window.onload = function() {
+    updateDisplay();
+    window.onresize = updateDisplay;
+}
+
+function updateDisplay() {
     drawGuitarNotes();
 }
 
@@ -34,8 +39,10 @@ function drawGuitarNotes() {
 
     // Misc constants
     const STRING_SPACE = 25;
-    const FRET_COUNT = 20;
-    const FRET_WIDTH = canvas.width / (FRET_COUNT + 1);
+    const FRET_WIDTH = 70;
+    const FRET_COUNT = Math.floor(canvas.width / FRET_WIDTH) - 1;
+    //const FRET_COUNT = 20;
+    //const FRET_WIDTH = canvas.width / (FRET_COUNT + 1);
 
     //////////////////////////////////////////////////////////////////////////
     // Draw strings
@@ -45,7 +52,7 @@ function drawGuitarNotes() {
     for (var string = 0; string < 6; string++) {
         ctx.beginPath();
         ctx.moveTo(FRET_WIDTH, STRING_SPACE * (string + 1));
-        ctx.lineTo(canvas.width, STRING_SPACE * (string + 1));
+        ctx.lineTo(FRET_WIDTH * (FRET_COUNT + 1), STRING_SPACE * (string + 1));
         ctx.stroke();  
     }
 

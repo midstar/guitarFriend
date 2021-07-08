@@ -1,0 +1,126 @@
+<html>
+<meta charset="utf-8"/>
+<head>
+<title>Guitar Friend</title>
+<style>
+
+</style>
+</head>
+<script>
+
+//////////////////////////////////////////////////////////////////////////
+// Constants
+const notes = ["A", "A♮/B♭", "B", "C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭"];
+const tuningStandard = ["E", "B", "G", "D", "A", "E"];
+
+// fret 0 = no open string
+function noteAt(fret, string) {
+    var firstNote = tuningStandard[string];
+    var index = notes.indexOf(firstNote);
+    index = (index + fret) % notes.length;
+    return notes[index];
+}
+
+window.onload = function() {
+    drawGuitarNotes();
+}
+
+function drawGuitarNotes() {
+    var canvas = document.getElementById("guitar-canvas");
+    canvas.width = document.body.offsetWidth;
+    canvas.height = document.body.offsetHeight;
+
+    var ctx = canvas.getContext("2d");
+
+    // Misc constants
+    const STRING_SPACE = 25;
+    const FRET_COUNT = 20;
+    const FRET_WIDTH = canvas.width / (FRET_COUNT + 1);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw strings
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+
+    for (var string = 0; string < 6; string++) {
+        ctx.beginPath();
+        ctx.moveTo(FRET_WIDTH, STRING_SPACE * (string + 1));
+        ctx.lineTo(canvas.width, STRING_SPACE * (string + 1));
+        ctx.stroke();  
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw fret lines
+    for (var fret = 1; fret <= (FRET_COUNT + 1); fret++) {
+        ctx.beginPath();
+        ctx.moveTo(FRET_WIDTH * fret, STRING_SPACE);
+        ctx.lineTo(FRET_WIDTH * fret, STRING_SPACE * 6);
+        ctx.stroke();  
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Write note text
+    for (var string = 0; string < 6; string++) {
+        for (var fret = 0; fret < (FRET_COUNT + 1); fret++) {
+            var centerX = FRET_WIDTH * fret + FRET_WIDTH / 2;
+            var centerY = STRING_SPACE * (string + 1);
+
+            var note = noteAt(fret, string);
+
+            var backgroundColor= "white";
+            var textColor = "black";
+            switch (note) {
+                case "A":
+                    backgroundColor = "lightblue"; 
+                    break; 
+                case "B":
+                    backgroundColor = "lightgreen"; 
+                    break; 
+                case "C":
+                    backgroundColor = "lightpink"; 
+                    break; 
+                case "D":
+                    backgroundColor = "lightgray"; 
+                    break; 
+                case "E":
+                    backgroundColor = "lightyellow"; 
+                    break; 
+                case "F":
+                    backgroundColor = "fuchsia"; 
+                    break; 
+                case "G":
+                    backgroundColor = "lightsalmon"; 
+                    break; 
+            }
+            ctx.beginPath();
+            ctx.fillStyle = backgroundColor;
+
+            if (note.includes("/")) {
+                var rectWidth = Math.round(FRET_WIDTH * 0.8);
+                var rectHeight = Math.round(STRING_SPACE * 0.8);
+                ctx.rect(centerX - (rectWidth / 2), centerY - (rectHeight / 2), rectWidth, rectHeight);
+                ctx.font = Math.round(STRING_SPACE * 0.4) + "px Arial";
+            } else {
+                ctx.arc(centerX, centerY, Math.round(STRING_SPACE * 0.45), 0, 2 * Math.PI);
+                ctx.font = Math.round(STRING_SPACE * 0.5) + "px Arial";
+            }
+            ctx.stroke();
+            ctx.fill();
+
+            ctx.fillStyle = textColor; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(note, centerX, centerY);
+        }
+    }
+
+
+}
+
+</script>
+<body>
+
+    <canvas id="guitar-canvas"></canvas>
+
+</body>
+</html>

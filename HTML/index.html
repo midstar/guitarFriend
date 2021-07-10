@@ -57,16 +57,33 @@
 //////////////////////////////////////////////////////////////////////////
 // Music stuff
 
-const notes = ["A", "A♮/B♭", "B", "C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭"];
-const tuningStandard = ["E", "B", "G", "D", "A", "E"];
+const notes = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
+const tunings = {
+    "standard" : {
+        "notes" : ["E", "B", "G", "D", "A", "E"],
+        "octaves" : [4, 3, 3, 3, 2, 2]
+    }
+};
+const selectedTuning = "standard";
 const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 // fret 0 = no open string
+// string 0 = lowest string (highest pitch)
 function noteAt(fret, string) {
-    var firstNote = tuningStandard[string];
+    var firstNote = tunings[selectedTuning]["notes"][string];
     var index = notes.indexOf(firstNote);
     index = (index + fret) % notes.length;
     return notes[index];
+}
+
+// fret 0 = no open string
+// string 0 = lowest string (highest pitch)
+function octaveAt(fret, string) {
+    var firstNote = tunings[selectedTuning]["notes"][string];
+    var firstOctave = tunings[selectedTuning]["octaves"][string];
+    var index = notes.indexOf(firstNote);
+    var octaveOffset = Math.floor((index + fret) / notes.length);
+    return firstOctave + octaveOffset;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -143,6 +160,7 @@ function drawGuitarNotes() {
             var centerY = STRING_SPACE * (string + 1);
 
             var note = noteAt(fret, string);
+            var octave = octaveAt(fret, string);
 
             var backgroundColor= "white";
             var textColor = "black";
@@ -171,7 +189,7 @@ function drawGuitarNotes() {
             }
             ctx.beginPath();
             ctx.fillStyle = backgroundColor;
-
+            var noteText = note;
             if (note.includes("/")) {
                 var rectWidth = Math.round(FRET_WIDTH * 0.8);
                 var rectHeight = Math.round(STRING_SPACE * 0.8);
@@ -180,6 +198,7 @@ function drawGuitarNotes() {
             } else {
                 ctx.arc(centerX, centerY, Math.round(STRING_SPACE * 0.45), 0, 2 * Math.PI);
                 ctx.font = Math.round(STRING_SPACE * 0.5) + "px Arial";
+                noteText = note + octave;
             }
             ctx.stroke();
             ctx.fill();
@@ -187,7 +206,7 @@ function drawGuitarNotes() {
             ctx.fillStyle = textColor; 
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(note, centerX, centerY);
+            ctx.fillText(noteText, centerX, centerY);
         }
     }
 
@@ -198,7 +217,7 @@ function drawGuitarNotes() {
 // TAB page general handling
 
 function tabSetup() {
-    tabShow(URLSearchParamGet("tab_selected", "tab-tones"));
+    tabShow(URLSearchParamGet("tab_selected", "tab-notes"));
 
     tabButtons = document.getElementsByClassName("tab-button");
     for (var i = 0; i < tabButtons.length ; i++) {
@@ -266,14 +285,14 @@ function URLSearchParamSet(key, value, reloadPage) {
 <body>
 
     <div class="tab">
-        <button class="tab-button" id="tab-tones">TONES</button>
+        <button class="tab-button" id="tab-notes">NOTES</button>
         <button class="tab-button" id="tab-chords">CHORDS</button>
         <button class="tab-button" id="tab-settings">&#9881;</button>
     </div>
 
     <!----------------------------------------------------------------------------------->
     <!-- Tones TAB -->
-    <div class="tab-page" id="tab-tones-page">
+    <div class="tab-page" id="tab-notes-page">
         <canvas id="guitar-canvas"></canvas>
     </div>
 

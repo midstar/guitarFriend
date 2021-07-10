@@ -59,6 +59,7 @@
 
 const notes = ["A", "A♮/B♭", "B", "C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭"];
 const tuningStandard = ["E", "B", "G", "D", "A", "E"];
+const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 // fret 0 = no open string
 function noteAt(fret, string) {
@@ -96,7 +97,7 @@ function drawGuitarNotes() {
     const STRING_COUNT = 6;
     const FRET_WIDTH = 70;
     const FRET_COUNT = Math.floor(canvas.width / FRET_WIDTH) - 1;
-    canvas.height = STRING_SPACE * (STRING_COUNT + 1);
+    canvas.height = STRING_SPACE * (STRING_COUNT + 2);
 
     //////////////////////////////////////////////////////////////////////////
     // Draw strings
@@ -118,6 +119,21 @@ function drawGuitarNotes() {
         ctx.lineTo(FRET_WIDTH * fret, STRING_SPACE * STRING_COUNT);
         ctx.stroke();  
     }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw fret markers
+    ctx.fillStyle = "black";
+    fretMarkers.forEach(function(fret) {
+        if (fret <= FRET_COUNT) {
+            ctx.beginPath();
+            ctx.arc(fret * FRET_WIDTH + (FRET_WIDTH / 2), 
+                    STRING_COUNT * STRING_SPACE + STRING_SPACE, 
+                    Math.round(STRING_SPACE * 0.1), 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fill();             
+        }
+    });
 
     //////////////////////////////////////////////////////////////////////////
     // Write note text

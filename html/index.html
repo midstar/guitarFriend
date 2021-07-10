@@ -50,6 +50,21 @@
   /*display: block;*/
   /*height: 100%;*/
 }
+
+/****************************************************************************/
+/* Settings style */
+
+.settings-title {
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    font-size: 20px;
+}
+
+#tab-settings-page button {
+    margin-left: 5px;
+}
+
 </style>
 </head>
 <script>
@@ -58,19 +73,12 @@
 // Music stuff
 
 const notes = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
-const tunings = {
-    "standard" : {
-        "notes" : ["E", "B", "G", "D", "A", "E"],
-        "octaves" : [4, 3, 3, 3, 2, 2]
-    }
-};
-const selectedTuning = "standard";
 const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 // fret 0 = no open string
 // string 0 = lowest string (highest pitch)
 function noteAt(fret, string) {
-    var firstNote = tunings[selectedTuning]["notes"][string];
+    var firstNote = settingsGetTuningNotes()[string];
     var index = notes.indexOf(firstNote);
     index = (index + fret) % notes.length;
     return notes[index];
@@ -79,8 +87,8 @@ function noteAt(fret, string) {
 // fret 0 = no open string
 // string 0 = lowest string (highest pitch)
 function octaveAt(fret, string) {
-    var firstNote = tunings[selectedTuning]["notes"][string];
-    var firstOctave = tunings[selectedTuning]["octaves"][string];
+    var firstNote = settingsGetTuningNotes()[string];
+    var firstOctave = parseInt(settingsGetTuningOctaves()[string]);
     var index = notes.indexOf(firstNote);
     var octaveOffset = Math.floor((index + fret) / notes.length);
     return firstOctave + octaveOffset;
@@ -91,6 +99,7 @@ function octaveAt(fret, string) {
 
 window.onload = function() {
     tabSetup();
+    settingsSetup();
     updateDisplay();
     window.onresize = updateDisplay;
 }
@@ -100,7 +109,7 @@ function updateDisplay() {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// TAB page general handling
+// TAB notes
 
 function drawGuitarNotes() {
     var canvas = document.getElementById("guitar-canvas");
@@ -191,7 +200,7 @@ function drawGuitarNotes() {
             ctx.fillStyle = backgroundColor;
             var noteText = note;
             if (note.includes("/")) {
-                var rectWidth = Math.round(FRET_WIDTH * 0.8);
+                var rectWidth = Math.round(FRET_WIDTH * 0.6);
                 var rectHeight = Math.round(STRING_SPACE * 0.8);
                 ctx.rect(centerX - (rectWidth / 2), centerY - (rectHeight / 2), rectWidth, rectHeight);
                 ctx.font = Math.round(STRING_SPACE * 0.4) + "px Arial";
@@ -214,12 +223,69 @@ function drawGuitarNotes() {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// TAB settings
+
+function settingsSetup() {
+    const TUNING_NOTES = settingsGetTuningNotes();
+    const TUNING_OCTAVES = settingsGetTuningOctaves();
+    const STRING_COUNT = TUNING_NOTES.length;
+
+    var tuningTable = document.getElementById("tuning-table");
+    for (var string = 0 ; string < STRING_COUNT; string++) {
+        var elemRow = document.createElement("tr");
+
+        // Cell: String
+        var elemCell = document.createElement("td");
+        elemCell.innerText = string + 1;
+        elemRow.appendChild(elemCell);
+
+        // Cell: Note
+        elemCell = document.createElement("td");
+        var elemSelect = document.createElement("select");
+        notes.forEach(function (note) {
+            var elemOption = document.createElement("option");
+            elemOption.setAttribute("value", note);
+            elemOption.innerText = note;
+            if (note == TUNING_NOTES[string]) {
+                elemOption.setAttribute("selected", "");
+            }
+            elemSelect.appendChild(elemOption);
+        });
+        elemCell.appendChild(elemSelect);
+        elemRow.appendChild(elemCell);
+
+        // Cell: Octave
+        elemCell = document.createElement("td");
+        var elemInput = document.createElement("input");
+        elemInput.setAttribute("type", "number");
+        elemInput.setAttribute("min", "0");
+        elemInput.setAttribute("max", "9");
+        elemInput.setAttribute("value", TUNING_OCTAVES[string]);
+
+        elemCell.appendChild(elemInput);
+        elemRow.appendChild(elemCell);
+
+        tuningTable.appendChild(elemRow);
+    }
+}
+
+function settingsGetTuningNotes() {
+    var value = URLSearchParamGet("tuning_notes", "E,B,G,D,A,E");
+    return value.split(",");
+}
+
+function settingsGetTuningOctaves() {
+    var value = URLSearchParamGet("tuning_octaves", "4,3,3,3,2,2");
+    return value.split(",");
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // TAB page general handling
 
 function tabSetup() {
     tabShow(URLSearchParamGet("tab_selected", "tab-notes"));
 
-    tabButtons = document.getElementsByClassName("tab-button");
+    var tabButtons = document.getElementsByClassName("tab-button");
     for (var i = 0; i < tabButtons.length ; i++) {
         tabButton = tabButtons[i];
         tabButton.setAttribute("onclick", "tabShow(\"" + tabButton.id + "\")");
@@ -304,6 +370,19 @@ function URLSearchParamSet(key, value, reloadPage) {
     <!----------------------------------------------------------------------------------->
     <!-- Settings TAB -->
     <div class="tab-page" id="tab-settings-page">
+        <div class="settings-group">
+            <div class="settings-title">Tuning</div>
+            <table id="tuning-table">
+                <tr id="tuning-table-heading">
+                    <th>String</th>
+                    <th>Note</th>
+                    <th>Octave</th>
+                </tr>
+            <table>
+            <button onclick="settingsTurningReset()">Reset to standard</button>
+            <button onclick="settingsTuningAddString()">Add string</button>
+            <button onclick="settingsTuningRemoveString()">Remove string</button>
+        </div>
     </div>
 
 </body>

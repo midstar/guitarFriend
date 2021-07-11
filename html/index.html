@@ -242,6 +242,8 @@ function settingsSetup() {
         // Cell: Note
         elemCell = document.createElement("td");
         var elemSelect = document.createElement("select");
+        elemSelect.setAttribute("onchange", "settingsUpdateTuningNotes()");
+        elemSelect.setAttribute("class", "tuning-table-note");
         notes.forEach(function (note) {
             var elemOption = document.createElement("option");
             elemOption.setAttribute("value", note);
@@ -257,6 +259,8 @@ function settingsSetup() {
         // Cell: Octave
         elemCell = document.createElement("td");
         var elemInput = document.createElement("input");
+        elemInput.setAttribute("onchange", "settingsUpdateTuningOctaves()");
+        elemInput.setAttribute("class", "tuning-table-octave");
         elemInput.setAttribute("type", "number");
         elemInput.setAttribute("min", "0");
         elemInput.setAttribute("max", "9");
@@ -267,6 +271,32 @@ function settingsSetup() {
 
         tuningTable.appendChild(elemRow);
     }
+}
+
+function settingsUpdateTuningNotes() {
+    var elements = document.getElementsByClassName("tuning-table-note");
+    tuningNotes = []
+    for (var i = 0; i < elements.length; i++) {
+        tuningNotes.push(elements[i].value);
+    }
+    URLSearchParamSet("tuning_notes", tuningNotes.join(","), true);
+}
+
+function settingsUpdateTuningOctaves() {
+    var elements = document.getElementsByClassName("tuning-table-octave");
+    tuningOctaves = []
+    for (var i = 0; i < elements.length; i++) {
+        tuningOctaves.push(elements[i].value);
+    }
+    URLSearchParamSet("tuning_octaves", tuningOctaves.join(","), true);
+}
+
+function settingsTuningReset() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("tuning_notes");
+    params.delete("tuning_octaves");
+    // Will reload page and replace history
+    window.location.search = params.toString();   
 }
 
 function settingsGetTuningNotes() {
@@ -379,7 +409,7 @@ function URLSearchParamSet(key, value, reloadPage) {
                     <th>Octave</th>
                 </tr>
             <table>
-            <button onclick="settingsTurningReset()">Reset to standard</button>
+            <button onclick="settingsTuningReset()">Reset to standard</button>
             <button onclick="settingsTuningAddString()">Add string</button>
             <button onclick="settingsTuningRemoveString()">Remove string</button>
         </div>

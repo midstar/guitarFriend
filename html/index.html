@@ -225,11 +225,53 @@ function drawGuitarNotes() {
 //////////////////////////////////////////////////////////////////////////////
 // TAB settings
 
+const GLOB_STD_TUNINGS = {
+    "Guitar - standard" : {
+        "notes"   : "E,B,G,D,A,E",
+        "octaves" : "4,3,3,3,2,2"
+    },
+    "Guitar - 8 string" : {
+        "notes"   : "E,B,G,D,A,E,B,F♮/G♭",
+        "octaves" : "4,3,3,3,2,2,1,1"
+    },
+    "Ukelele" : {
+        "notes"   : "A,E,C,G",
+        "octaves" : "4,4,4,4"
+    },
+    "Bass" : {
+        "notes"   : "G,D,A,E",
+        "octaves" : "2,2,1,1"
+    }
+};
+
 function settingsSetup() {
     const TUNING_NOTES = settingsGetTuningNotes();
     const TUNING_OCTAVES = settingsGetTuningOctaves();
     const STRING_COUNT = TUNING_NOTES.length;
 
+    // Update Tuning selection
+    var tuningSelect = document.getElementById("tuning-select");
+    var useCustom = true;
+    for (tuning in GLOB_STD_TUNINGS) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", tuning);
+        elemOption.innerText = tuning;
+        if (GLOB_STD_TUNINGS[tuning]["notes"]   == TUNING_NOTES.join(",") &&
+            GLOB_STD_TUNINGS[tuning]["octaves"] == TUNING_OCTAVES.join(",")) {
+            elemOption.setAttribute("selected", "");
+            useCustom = false;
+        }
+        tuningSelect.appendChild(elemOption);
+    }
+    if (useCustom) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", "Custom");
+        elemOption.innerText = "Custom";
+        elemOption.setAttribute("selected", "");
+        tuningSelect.appendChild(elemOption);
+    }
+
+    // Update Tuning table
     var tuningTable = document.getElementById("tuning-table");
     for (var string = 0 ; string < STRING_COUNT; string++) {
         var elemRow = document.createElement("tr");
@@ -270,6 +312,14 @@ function settingsSetup() {
         elemRow.appendChild(elemCell);
 
         tuningTable.appendChild(elemRow);
+    }
+}
+
+function settingsTuningSelect() {
+    var tuning = document.getElementById("tuning-select").value;
+    if (tuning != "Custom") {
+        settingsSetTuning(GLOB_STD_TUNINGS[tuning]["notes"].split(","),
+                          GLOB_STD_TUNINGS[tuning]["octaves"].split(","));
     }
 }
 
@@ -428,6 +478,7 @@ function URLSearchParamSet(key, value, reloadPage) {
     <div class="tab-page" id="tab-settings-page">
         <div class="settings-group">
             <div class="settings-title">Tuning</div>
+            <select id="tuning-select" onchange="settingsTuningSelect()"></select>
             <table id="tuning-table">
                 <tr id="tuning-table-heading">
                     <th>String</th>

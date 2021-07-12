@@ -72,16 +72,16 @@
 //////////////////////////////////////////////////////////////////////////
 // Music stuff
 
-const notes = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
-const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+const GLOB_NOTES = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
+const GLOB_FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 // fret 0 = no open string
 // string 0 = lowest string (highest pitch)
 function noteAt(fret, string) {
     var firstNote = settingsGetTuningNotes()[string];
-    var index = notes.indexOf(firstNote);
-    index = (index + fret) % notes.length;
-    return notes[index];
+    var index = GLOB_NOTES.indexOf(firstNote);
+    index = (index + fret) % GLOB_NOTES.length;
+    return GLOB_NOTES[index];
 }
 
 // fret 0 = no open string
@@ -89,8 +89,8 @@ function noteAt(fret, string) {
 function octaveAt(fret, string) {
     var firstNote = settingsGetTuningNotes()[string];
     var firstOctave = parseInt(settingsGetTuningOctaves()[string]);
-    var index = notes.indexOf(firstNote);
-    var octaveOffset = Math.floor((index + fret) / notes.length);
+    var index = GLOB_NOTES.indexOf(firstNote);
+    var octaveOffset = Math.floor((index + fret) / GLOB_NOTES.length);
     return firstOctave + octaveOffset;
 }
 
@@ -120,7 +120,7 @@ function drawGuitarNotes() {
 
     // Misc constants
     const STRING_SPACE = 25;
-    const STRING_COUNT = 6;
+    const STRING_COUNT = settingsGetTuningNotes().length;
     const FRET_WIDTH = 70;
     const FRET_COUNT = Math.floor(canvas.width / FRET_WIDTH) - 1;
     canvas.height = STRING_SPACE * (STRING_COUNT + 2);
@@ -150,7 +150,7 @@ function drawGuitarNotes() {
     //////////////////////////////////////////////////////////////////////////
     // Draw fret markers
     ctx.fillStyle = "black";
-    fretMarkers.forEach(function(fret) {
+    GLOB_FRET_MARKERS.forEach(function(fret) {
         if (fret <= FRET_COUNT) {
             ctx.beginPath();
             ctx.arc(fret * FRET_WIDTH + (FRET_WIDTH / 2), 
@@ -244,7 +244,7 @@ function settingsSetup() {
         var elemSelect = document.createElement("select");
         elemSelect.setAttribute("onchange", "settingsUpdateTuningNotes()");
         elemSelect.setAttribute("class", "tuning-table-note");
-        notes.forEach(function (note) {
+        GLOB_NOTES.forEach(function (note) {
             var elemOption = document.createElement("option");
             elemOption.setAttribute("value", note);
             elemOption.innerText = note;
@@ -291,12 +291,38 @@ function settingsUpdateTuningOctaves() {
     URLSearchParamSet("tuning_octaves", tuningOctaves.join(","), true);
 }
 
+function settingsTuningRemoveString() {
+    var notes = settingsGetTuningNotes();
+    var octaves = settingsGetTuningOctaves();
+    if (notes.length > 1) {
+        notes.pop();
+        octaves.pop();
+        settingsSetTuning(notes, octaves);
+    }
+}
+
+function settingsTuningAddString() {
+    var notes = settingsGetTuningNotes();
+    var octaves = settingsGetTuningOctaves();
+    notes.push(GLOB_NOTES[0]);
+    octaves.push("2");
+    settingsSetTuning(notes, octaves);
+}
+
 function settingsTuningReset() {
     const params = new URLSearchParams(window.location.search);
     params.delete("tuning_notes");
     params.delete("tuning_octaves");
     // Will reload page and replace history
     window.location.search = params.toString();   
+}
+
+function settingsSetTuning(notes, octaves) {
+    const params = new URLSearchParams(window.location.search);
+    params.set("tuning_notes", notes.join(","));
+    params.set("tuning_octaves", octaves.join(","));
+    // Will reload page and replace history
+    window.location.search = params.toString();         
 }
 
 function settingsGetTuningNotes() {

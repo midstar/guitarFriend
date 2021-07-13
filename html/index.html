@@ -232,6 +232,9 @@ function drawGuitarNotes() {
 // 1 means press fret 1
 // ..
 // x means press fret x
+//
+// Index 0 corresponds to highest string (highest pitch)
+//
 // Returns a canvas object
 function chordChart(label,strings) {
     const STRING_SPACE = 15;
@@ -265,7 +268,7 @@ function chordChart(label,strings) {
             case 0:
                 text = "o"
         }
-        ctx.fillText(text, STRING_SPACE / 2 + STRING_SPACE * string, 
+        ctx.fillText(text, STRING_SPACE / 2 + STRING_SPACE * (STRING_COUNT - 1) - STRING_SPACE * string, 
                      FRET_OFFSET*0.8);
     }
 
@@ -300,7 +303,7 @@ function chordChart(label,strings) {
         var fret = strings[string];
         if (fret > 0) {
             ctx.beginPath();
-            ctx.arc(STRING_SPACE / 2 + string * STRING_SPACE, 
+            ctx.arc(STRING_SPACE / 2 + STRING_SPACE * (STRING_COUNT - 1) - STRING_SPACE * string, 
                     FRET_OFFSET + FRET_SPACE * fret - FRET_SPACE / 2, 
                     Math.round(STRING_SPACE * 0.3), 0, 2 * Math.PI);
             ctx.stroke(); 
@@ -308,13 +311,38 @@ function chordChart(label,strings) {
         }       
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    // Draw barre line (when possible)
+    var barreFret = strings[0];
+    if (barreFret > 0) {
+        var lastString = 0;
+        for (var string = 1; string < STRING_COUNT; string++) {
+            if (strings[string] < barreFret) {
+                break;
+            }
+            if (strings[string] == barreFret) {
+                lastString = string;
+            }
+        }
+        if (lastString > 0) {
+            ctx.beginPath();
+            ctx.rect(WIDTH - STRING_SPACE / 2 - STRING_SPACE * lastString, 
+                     FRET_OFFSET + FRET_SPACE * barreFret - FRET_SPACE / 2 - 1, 
+                     lastString*STRING_SPACE, 2);
+            ctx.stroke(); 
+            ctx.fill();
+        }
+    }
+
     return canvas;    
 }
 
 function chordSetup() {
     var chordsPage = document.getElementById("tab-chords-page");
-    chordsPage.appendChild(chordChart("D",[-1, -1, 0, 2, 3, 2]));
-    chordsPage.appendChild(chordChart("E",[0, 2, 2, 1, 0, 0]));
+    chordsPage.appendChild(chordChart("D",[2, 3, 2, 0, -1, -1]));
+    chordsPage.appendChild(chordChart("E",[0, 0, 1, 2, 2, 0]));
+    chordsPage.appendChild(chordChart("Bm",[2, 3, 4, 4, 2, -1]));
+    chordsPage.appendChild(chordChart("F",[1, 1, 2, 3, 3, 1]));
 }
 
 //////////////////////////////////////////////////////////////////////////////

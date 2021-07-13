@@ -70,31 +70,6 @@
 <script>
 
 //////////////////////////////////////////////////////////////////////////
-// Music stuff
-
-const GLOB_NOTES = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
-const GLOB_FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
-
-// fret 0 = no open string
-// string 0 = lowest string (highest pitch)
-function noteAt(fret, string) {
-    var firstNote = settingsGetTuningNotes()[string];
-    var index = GLOB_NOTES.indexOf(firstNote);
-    index = (index + fret) % GLOB_NOTES.length;
-    return GLOB_NOTES[index];
-}
-
-// fret 0 = no open string
-// string 0 = lowest string (highest pitch)
-function octaveAt(fret, string) {
-    var firstNote = settingsGetTuningNotes()[string];
-    var firstOctave = parseInt(settingsGetTuningOctaves()[string]);
-    var index = GLOB_NOTES.indexOf(firstNote);
-    var octaveOffset = Math.floor((index + fret) / GLOB_NOTES.length);
-    return firstOctave + octaveOffset;
-}
-
-//////////////////////////////////////////////////////////////////////////
 // Misc
 
 window.onload = function() {
@@ -145,6 +120,15 @@ function drawGuitarNotes() {
         ctx.lineTo(FRET_WIDTH * fret, STRING_SPACE * STRING_COUNT);
         ctx.stroke();  
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Thicker line on fret 0
+    const FRET_0_WIDTH = 3;
+    ctx.beginPath();
+    ctx.rect(FRET_WIDTH - FRET_0_WIDTH, STRING_SPACE, 
+             FRET_0_WIDTH, STRING_SPACE * (STRING_COUNT - 1));
+    ctx.stroke();  
+    ctx.fill();     
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -223,6 +207,9 @@ function drawGuitarNotes() {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// TAB chords
+
+//////////////////////////////////////////////////////////////////////////////
 // TAB settings
 
 const GLOB_STD_TUNINGS = {
@@ -243,6 +230,27 @@ const GLOB_STD_TUNINGS = {
         "octaves" : "2,2,1,1"
     }
 };
+const GLOB_NOTES = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
+const GLOB_FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+
+// fret 0 = no open string
+// string 0 = lowest string (highest pitch)
+function noteAt(fret, string) {
+    var firstNote = settingsGetTuningNotes()[string];
+    var index = GLOB_NOTES.indexOf(firstNote);
+    index = (index + fret) % GLOB_NOTES.length;
+    return GLOB_NOTES[index];
+}
+
+// fret 0 = no open string
+// string 0 = lowest string (highest pitch)
+function octaveAt(fret, string) {
+    var firstNote = settingsGetTuningNotes()[string];
+    var firstOctave = parseInt(settingsGetTuningOctaves()[string]);
+    var index = GLOB_NOTES.indexOf(firstNote);
+    var octaveOffset = Math.floor((index + fret) / GLOB_NOTES.length);
+    return firstOctave + octaveOffset;
+}
 
 function settingsSetup() {
     const TUNING_NOTES = settingsGetTuningNotes();

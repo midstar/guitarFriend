@@ -76,11 +76,28 @@ window.onload = function() {
     tabSetup();
     settingsSetup();
     updateDisplay();
+    chordSetup();
     window.onresize = updateDisplay;
 }
 
 function updateDisplay() {
     drawGuitarNotes();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Sound - currently not used
+
+function playSound(frequency, type) {
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // create Oscillator node
+    var oscillator = audioCtx.createOscillator();
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime); // value in hertz
+    oscillator.connect(audioCtx.destination);
+    oscillator.start();    
+    oscillator.stop(0.3);    
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -96,8 +113,8 @@ function drawGuitarNotes() {
     // Misc constants
     const STRING_SPACE = 25;
     const STRING_COUNT = settingsGetTuningNotes().length;
-    const FRET_WIDTH = 70;
-    const FRET_COUNT = Math.floor(canvas.width / FRET_WIDTH) - 1;
+    const FRET_SPACE = 70;
+    const FRET_COUNT = Math.floor(canvas.width / FRET_SPACE) - 1;
     canvas.height = STRING_SPACE * (STRING_COUNT + 2);
 
     //////////////////////////////////////////////////////////////////////////
@@ -107,8 +124,8 @@ function drawGuitarNotes() {
 
     for (var string = 0; string < STRING_COUNT; string++) {
         ctx.beginPath();
-        ctx.moveTo(FRET_WIDTH, STRING_SPACE * (string + 1));
-        ctx.lineTo(FRET_WIDTH * (FRET_COUNT + 1), STRING_SPACE * (string + 1));
+        ctx.moveTo(FRET_SPACE, STRING_SPACE * (string + 1));
+        ctx.lineTo(FRET_SPACE * (FRET_COUNT + 1), STRING_SPACE * (string + 1));
         ctx.stroke();  
     }
 
@@ -116,8 +133,8 @@ function drawGuitarNotes() {
     // Draw fret lines
     for (var fret = 1; fret <= (FRET_COUNT + 1); fret++) {
         ctx.beginPath();
-        ctx.moveTo(FRET_WIDTH * fret, STRING_SPACE);
-        ctx.lineTo(FRET_WIDTH * fret, STRING_SPACE * STRING_COUNT);
+        ctx.moveTo(FRET_SPACE * fret, STRING_SPACE);
+        ctx.lineTo(FRET_SPACE * fret, STRING_SPACE * STRING_COUNT);
         ctx.stroke();  
     }
 
@@ -125,7 +142,7 @@ function drawGuitarNotes() {
     // Thicker line on fret 0
     const FRET_0_WIDTH = 3;
     ctx.beginPath();
-    ctx.rect(FRET_WIDTH - FRET_0_WIDTH, STRING_SPACE, 
+    ctx.rect(FRET_SPACE - FRET_0_WIDTH, STRING_SPACE, 
              FRET_0_WIDTH, STRING_SPACE * (STRING_COUNT - 1));
     ctx.stroke();  
     ctx.fill();     
@@ -137,7 +154,7 @@ function drawGuitarNotes() {
     GLOB_FRET_MARKERS.forEach(function(fret) {
         if (fret <= FRET_COUNT) {
             ctx.beginPath();
-            ctx.arc(fret * FRET_WIDTH + (FRET_WIDTH / 2), 
+            ctx.arc(fret * FRET_SPACE + (FRET_SPACE / 2), 
                     STRING_COUNT * STRING_SPACE + STRING_SPACE, 
                     Math.round(STRING_SPACE * 0.1), 0, 2 * Math.PI);
             ctx.stroke();
@@ -149,7 +166,7 @@ function drawGuitarNotes() {
     // Write note text
     for (var string = 0; string < STRING_COUNT; string++) {
         for (var fret = 0; fret < (FRET_COUNT + 1); fret++) {
-            var centerX = FRET_WIDTH * fret + FRET_WIDTH / 2;
+            var centerX = FRET_SPACE * fret + FRET_SPACE / 2;
             var centerY = STRING_SPACE * (string + 1);
 
             var note = noteAt(fret, string);
@@ -184,7 +201,7 @@ function drawGuitarNotes() {
             ctx.fillStyle = backgroundColor;
             var noteText = note;
             if (note.includes("/")) {
-                var rectWidth = Math.round(FRET_WIDTH * 0.6);
+                var rectWidth = Math.round(FRET_SPACE * 0.6);
                 var rectHeight = Math.round(STRING_SPACE * 0.8);
                 ctx.rect(centerX - (rectWidth / 2), centerY - (rectHeight / 2), rectWidth, rectHeight);
                 ctx.font = Math.round(STRING_SPACE * 0.4) + "px Arial";
@@ -208,6 +225,97 @@ function drawGuitarNotes() {
 
 //////////////////////////////////////////////////////////////////////////////
 // TAB chords
+
+// Strings is an array where length equals number of strings.
+// -1 means do not play
+// 0 means open
+// 1 means press fret 1
+// ..
+// x means press fret x
+// Returns a canvas object
+function chordChart(label,strings) {
+    const STRING_SPACE = 15;
+    const STRING_COUNT = strings.length;
+    const FRET_SPACE = 20;
+    const FRET_COUNT = 5;
+    const FRET_OFFSET = FRET_SPACE * 1.5;
+    const WIDTH = STRING_SPACE * STRING_COUNT;
+
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw label
+    ctx.font = Math.round(FRET_OFFSET * 0.6) + "px Arial";
+    ctx.fillStyle = "black"; 
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, WIDTH / 2, FRET_OFFSET * 0.3);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw string markers
+    ctx.font = Math.round(FRET_OFFSET * 0.35) + "px Arial";
+    for (var string = 0; string < STRING_COUNT; string++) {
+        var text = "";
+        switch(strings[string]) {
+            case -1:
+                text = "x";
+                break;
+            case 0:
+                text = "o"
+        }
+        ctx.fillText(text, STRING_SPACE / 2 + STRING_SPACE * string, 
+                     FRET_OFFSET*0.8);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Thicker line on fret 0
+    ctx.beginPath();
+    ctx.rect(STRING_SPACE / 2, FRET_OFFSET - 1, WIDTH - STRING_SPACE, 2);
+    ctx.stroke();  
+    ctx.fill();     
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw strings
+    for (var string = 0; string < STRING_COUNT; string++) {
+        ctx.beginPath();
+        ctx.moveTo(STRING_SPACE / 2 + string * STRING_SPACE, FRET_OFFSET);
+        ctx.lineTo(STRING_SPACE / 2 + string * STRING_SPACE, FRET_OFFSET + FRET_SPACE * FRET_COUNT);
+        ctx.stroke();        
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw frets
+    for (var fret = 0; fret < (FRET_COUNT + 1); fret++) {
+        ctx.beginPath();
+        ctx.moveTo(STRING_SPACE / 2, FRET_OFFSET + FRET_SPACE * fret);
+        ctx.lineTo(STRING_SPACE / 2 + (STRING_COUNT - 1) * STRING_SPACE,  FRET_OFFSET + FRET_SPACE * fret);
+        ctx.stroke();        
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw "dots"
+    for (var string = 0; string < STRING_COUNT; string++) {
+        var fret = strings[string];
+        if (fret > 0) {
+            ctx.beginPath();
+            ctx.arc(STRING_SPACE / 2 + string * STRING_SPACE, 
+                    FRET_OFFSET + FRET_SPACE * fret - FRET_SPACE / 2, 
+                    Math.round(STRING_SPACE * 0.3), 0, 2 * Math.PI);
+            ctx.stroke(); 
+            ctx.fill();
+        }       
+    }
+
+    return canvas;    
+}
+
+function chordSetup() {
+    var chordsPage = document.getElementById("tab-chords-page");
+    chordsPage.appendChild(chordChart("D",[-1, -1, 0, 2, 3, 2]));
+    chordsPage.appendChild(chordChart("E",[0, 2, 2, 1, 0, 0]));
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // TAB settings

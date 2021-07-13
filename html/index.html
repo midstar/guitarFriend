@@ -226,6 +226,24 @@ function drawGuitarNotes() {
 //////////////////////////////////////////////////////////////////////////////
 // TAB chords
 
+const GLOB_CHORD_TYPES = ["major", "minor"];
+
+// Get involved notes in a chord
+function chordNotes(rootNote,chordType) {
+    var result = [rootNote];
+    switch(chordType) {
+        case "major":
+            result.push(noteAtOffset(rootNote, 4)); // Major third
+            result.push(noteAtOffset(rootNote, 7)); // Perfect fifth
+            break;
+        case "minor":
+            result.push(noteAtOffset(rootNote, 3)); // Minor third
+            result.push(noteAtOffset(rootNote, 7)); // Perfect fifth
+            break;
+    }
+    return result;
+}
+
 // Strings is an array where length equals number of strings.
 // -1 means do not play
 // 0 means open
@@ -243,8 +261,11 @@ function chordChart(label,strings) {
     const FRET_COUNT = 5;
     const FRET_OFFSET = FRET_SPACE * 1.5;
     const WIDTH = STRING_SPACE * STRING_COUNT;
+    const HEIGHT = FRET_OFFSET + FRET_SPACE * FRET_COUNT + FRET_SPACE / 2;
 
     var canvas = document.createElement("canvas");
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
     var ctx = canvas.getContext("2d");
 
 
@@ -338,11 +359,36 @@ function chordChart(label,strings) {
 }
 
 function chordSetup() {
+     
+    // Update chord root note selection
+    var rootNoteSelect = document.getElementById("chord-select-root-note");
+    GLOB_NOTES.forEach(function (note) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", note);
+        elemOption.innerText = note;
+        rootNoteSelect.appendChild(elemOption);
+    });
+   
+    // Update chord root note selection
+    var chordTypeSelect = document.getElementById("chord-select-type");
+    GLOB_CHORD_TYPES.forEach(function (type) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", type);
+        elemOption.innerText = type;
+        chordTypeSelect.appendChild(elemOption);
+    });
+
     var chordsPage = document.getElementById("tab-chords-page");
     chordsPage.appendChild(chordChart("D",[2, 3, 2, 0, -1, -1]));
     chordsPage.appendChild(chordChart("E",[0, 0, 1, 2, 2, 0]));
     chordsPage.appendChild(chordChart("Bm",[2, 3, 4, 4, 2, -1]));
     chordsPage.appendChild(chordChart("F",[1, 1, 2, 3, 3, 1]));
+}
+
+function chordSelect() {
+    var rootNote = document.getElementById("chord-select-root-note").value;
+    var chordType = document.getElementById("chord-select-type").value;
+    alert(chordNotes(rootNote,chordType));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -369,13 +415,17 @@ const GLOB_STD_TUNINGS = {
 const GLOB_NOTES = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
 const GLOB_FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
+function noteAtOffset(rootNote, offset) {
+    var index = GLOB_NOTES.indexOf(rootNote);
+    index = (index + offset) % GLOB_NOTES.length;
+    return GLOB_NOTES[index];
+}
+
 // fret 0 = no open string
 // string 0 = lowest string (highest pitch)
 function noteAt(fret, string) {
     var firstNote = settingsGetTuningNotes()[string];
-    var index = GLOB_NOTES.indexOf(firstNote);
-    index = (index + fret) % GLOB_NOTES.length;
-    return GLOB_NOTES[index];
+    return noteAtOffset(firstNote, fret);
 }
 
 // fret 0 = no open string
@@ -615,6 +665,10 @@ function URLSearchParamSet(key, value, reloadPage) {
     <!----------------------------------------------------------------------------------->
     <!-- Chords TAB -->
     <div class="tab-page" id="tab-chords-page">
+        <div>
+            <select id="chord-select-root-note" onchange="chordSelect()"></select>
+            <select id="chord-select-type" onchange="chordSelect()"></select>
+        </div>
     </div>
 
     <!----------------------------------------------------------------------------------->

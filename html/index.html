@@ -376,12 +376,12 @@ function settingsSetTuning(notes, octaves) {
 }
 
 function settingsGetTuningNotes() {
-    var value = URLSearchParamGet("tuning_notes", "E,B,G,D,A,E");
+    var value = URLSearchParamGet("tuning_notes", GLOB_STD_TUNINGS["Guitar - standard"]["notes"]);
     return value.split(",");
 }
 
 function settingsGetTuningOctaves() {
-    var value = URLSearchParamGet("tuning_octaves", "4,3,3,3,2,2");
+    var value = URLSearchParamGet("tuning_octaves", GLOB_STD_TUNINGS["Guitar - standard"]["octaves"]);
     return value.split(",");
 }
 

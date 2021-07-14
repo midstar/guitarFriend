@@ -244,6 +244,65 @@ function chordNotes(rootNote,chordType) {
     return result;
 }
 
+// Returns a list of all possible chordCharts
+function chordChartFinder(notes, maxFret) {
+    const TUNING_NOTES = settingsGetTuningNotes();
+    const STRING_COUNT = TUNING_NOTES.length;
+    var result = [];
+    var lastBaseNotePoints = 999999;
+    while(true) {
+        var strings = [];
+        TUNING_NOTES.forEach(function() {
+            strings.push(-1);
+        });
+        var availableNotes = [...notes];
+        var baseNoteFound = false;
+        for (string = (STRING_COUNT-1); string >= 0; string--) {
+            for (fret = 0; fret < maxFret; fret ++) {
+                var baseNotePoints = string * 100 + fret;
+                var noteAtFret = noteAt(fret, string);
+                if (baseNoteFound == false) {
+                    if ((noteAtFret == notes[0]) &&
+                        (baseNotePoints < lastBaseNotePoints)) {
+                        lastBaseNotePoints = baseNotePoints;
+                        baseNoteFound = true;
+                        strings[string] = fret;
+                        availableNotes.shift();
+                        break;
+                    }
+                } else {
+                    if (availableNotes.length > 0) {
+                        var index = availableNotes.indexOf(noteAtFret);
+                        if (index > -1) {
+                            strings[string] = fret;
+                            availableNotes.splice(index, 1);
+                            break;
+                        }
+                    }
+                    var index = notes.indexOf(noteAtFret);
+                    if (index > -1) {
+                        strings[string] = fret;
+                        break;
+                    }
+                }
+            }
+            if ((baseNoteFound == true) && (strings[string] == -1)) {
+                // Open stings not allowed after base note
+                break;
+            }
+        }
+        if (baseNoteFound == false) {
+            break; // No more chords found
+        }
+        if ((strings[0] != -1) && availableNotes.length == 0) {
+            // This is a valid chord
+            result.push(strings);
+        }
+
+    }
+    return result;
+}
+
 // Strings is an array where length equals number of strings.
 // -1 means do not play
 // 0 means open
@@ -388,7 +447,10 @@ function chordSetup() {
 function chordSelect() {
     var rootNote = document.getElementById("chord-select-root-note").value;
     var chordType = document.getElementById("chord-select-type").value;
-    alert(chordNotes(rootNote,chordType));
+    var notes = chordNotes(rootNote,chordType);
+    console.log("Notes: " + notes);
+    var chordCharts = chordChartFinder(notes, 5);
+    console.log("Charts: " + chordCharts);
 }
 
 //////////////////////////////////////////////////////////////////////////////

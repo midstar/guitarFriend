@@ -245,7 +245,7 @@ function chordNotes(rootNote,chordType) {
 }
 
 // Returns a list of all possible chordCharts
-function chordChartFinder(notes, maxFret) {
+function chordChartFinder(notes, minFret, maxFret) {
     const TUNING_NOTES = settingsGetTuningNotes();
     const STRING_COUNT = TUNING_NOTES.length;
     var result = [];
@@ -258,7 +258,11 @@ function chordChartFinder(notes, maxFret) {
         var availableNotes = [...notes];
         var baseNoteFound = false;
         for (string = (STRING_COUNT-1); string >= 0; string--) {
-            for (fret = 0; fret < maxFret; fret ++) {
+            for (fret = 0; fret <= maxFret; fret ++) {
+                if ((fret != 0) && (fret < minFret)) {
+                    // Not allowed
+                    continue;
+                }
                 var baseNotePoints = string * 100 + fret;
                 var noteAtFret = noteAt(fret, string);
                 if (baseNoteFound == false) {
@@ -370,7 +374,6 @@ function chordChart(label,strings) {
 
     //////////////////////////////////////////////////////////////////////////
     // Draw fret marker 
-    console.log("FRET_START: " + FRET_START);
     if (FRET_START > 1) {
         ctx.font = Math.round(FRET_OFFSET * 0.3) + "px Arial";
         ctx.fillStyle = "black"; 
@@ -484,12 +487,30 @@ function chordSetup() {
 }
 
 function chordSelect() {
+    const MAX_FRET_OFFSETS = 8;
     var rootNote = document.getElementById("chord-select-root-note").value;
     var chordType = document.getElementById("chord-select-type").value;
     var notes = chordNotes(rootNote,chordType);
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
-    var chordCharts = chordChartFinder(notes, 5);
+    var chordCharts = [];
+    for (var startFret = 1; startFret < MAX_FRET_OFFSETS; startFret++) {
+        var cc = chordChartFinder(notes, startFret, startFret + 4);
+        for (var i = 0; i < cc.length; i++) {
+            // Check if already exists
+            var duplicate = false;
+            for (var j = 0; j < chordCharts.length; j++) {
+                if (cc[i].join(",") == chordCharts[j].join(",")) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (duplicate == false) {
+                chordCharts.push(cc[i]);
+            }
+        }
+    }
+    console.log(chordCharts);
     var label = rootNote;
     if (chordType == "minor") {
         label = label + "m";
@@ -498,8 +519,6 @@ function chordSelect() {
     chordsPage.innerHTML = ""; // Remove all old charts
     chordCharts.forEach(function(strings) {
         chordsPage.appendChild(chordChart(label,strings));
-
-        chordsPage.appendChild(chordChart("Joel",[-1,-1,0,2,6,2]));
     });
 }
 

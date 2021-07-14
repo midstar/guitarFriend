@@ -437,20 +437,25 @@ function chordSetup() {
         chordTypeSelect.appendChild(elemOption);
     });
 
-    var chordsPage = document.getElementById("tab-chords-page");
-    chordsPage.appendChild(chordChart("D",[2, 3, 2, 0, -1, -1]));
-    chordsPage.appendChild(chordChart("E",[0, 0, 1, 2, 2, 0]));
-    chordsPage.appendChild(chordChart("Bm",[2, 3, 4, 4, 2, -1]));
-    chordsPage.appendChild(chordChart("F",[1, 1, 2, 3, 3, 1]));
+    chordSelect();
 }
 
 function chordSelect() {
     var rootNote = document.getElementById("chord-select-root-note").value;
     var chordType = document.getElementById("chord-select-type").value;
     var notes = chordNotes(rootNote,chordType);
-    console.log("Notes: " + notes);
+    var chordNotesElem = document.getElementById("chord-notes");
+    chordNotesElem.innerText = notes;
     var chordCharts = chordChartFinder(notes, 5);
-    console.log("Charts: " + chordCharts);
+    var label = rootNote;
+    if (chordType == "minor") {
+        label = label + "m";
+    }
+    var chordsPage = document.getElementById("chord-charts");
+    chordsPage.innerHTML = ""; // Remove all old charts
+    chordCharts.forEach(function(strings) {
+        chordsPage.appendChild(chordChart(label,strings));
+    });
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -730,6 +735,8 @@ function URLSearchParamSet(key, value, reloadPage) {
         <div>
             <select id="chord-select-root-note" onchange="chordSelect()"></select>
             <select id="chord-select-type" onchange="chordSelect()"></select>
+            <div id="chord-notes"></div>
+            <div id="chord-charts"></div>
         </div>
     </div>
 

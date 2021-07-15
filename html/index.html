@@ -307,6 +307,169 @@ function chordChartFinder(notes, minFret, maxFret) {
     return result;
 }
 
+// Recursive function that returns a list of arrays with
+// same length of the matrix where each array is a unique
+// combination elements in the matrix.
+function permutations(matrix, startIndex) {
+    var result = [];
+    if (matrix.length > (startIndex + 1)) {
+        var subsets = permutations(matrix, startIndex + 1);
+        for (var i = 0 ; i < matrix[startIndex].length ; i++) {
+            for (var j = 0; j < subsets.length; j++) {
+                result.push([matrix[startIndex][i]].concat(subsets[j]));
+            }
+        }
+    } else {
+        // Leaf node
+        for (var i = 0 ; i < matrix[startIndex].length ; i++) {
+            result.push([matrix[startIndex][i]]);
+        }
+    }
+
+    return result;
+}
+
+// Returns a list of all possible chordCharts
+function chordChartFinder2(notes, minFret, maxFret) {
+    const TUNING_NOTES = settingsGetTuningNotes();
+    const STRING_COUNT = TUNING_NOTES.length;
+    const BASE_NOTE = notes[0];
+
+    // Allowed fret positions
+    var allowedFrets = [0]; // Open is always allowed
+    for (var fret = minFret; fret <= maxFret; fret++) {
+        allowedFrets.push(fret);
+    }
+    
+    // Find out all possible fret positions on each string
+    var possibleFrets = [];
+    for (var string = 0; string < STRING_COUNT; string++) {
+        var possible = [-1]; // Not played always allowed
+        allowedFrets.forEach(function(fret) {
+            var noteAtFret = noteAt(fret, string);
+            if(notes.indexOf(noteAtFret) > -1) {
+                possible.push(fret);
+            }
+        });
+        possibleFrets.push(possible);
+    }
+
+    // All possible chord permutations
+    var possiblePermutations = permutations(possibleFrets, 0);
+    var acceptedPermutations = possiblePermutations;
+
+    // Only keep permutations starting with -1 or base note on
+    // at minium string with index 1
+    var baseNotePermutations = [];
+    for (var i=0;i < acceptedPermutations.length;i++) {
+        for (string = (STRING_COUNT - 1) ; string > 0; string--) {
+            var fret = acceptedPermutations[i][string];
+            if (fret >= 0) {
+                var noteAtFret = noteAt(fret, string);
+                if (noteAtFret == BASE_NOTE) {
+                    baseNotePermutations.push(acceptedPermutations[i]);
+                }
+                break; 
+            }
+        }
+    }  
+    acceptedPermutations = baseNotePermutations;
+
+    // Only keep permutations where all notes are represented
+    var allNotesPermutations = [];
+    for (var i=0;i < acceptedPermutations.length;i++) {
+        var nonUsedNotes = [...notes];
+        for (string = 0 ; string < STRING_COUNT; string++) {
+            var fret = acceptedPermutations[i][string];
+            if (fret >= 0) {
+                var noteAtFret = noteAt(fret, string);
+                var index = nonUsedNotes.indexOf(noteAtFret);
+                if (index >= 0) {
+                    nonUsedNotes.splice(index, 1);
+                    if (nonUsedNotes.length == 0) {
+                        // All there - ok
+                        allNotesPermutations.push(acceptedPermutations[i]);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    acceptedPermutations = allNotesPermutations;
+
+    // Remove permutations that has non-played strings (-1)
+    // between two playable strings
+    var playablePermutations = [];
+    for (var i = 0; i < acceptedPermutations.length;i++) {
+        var firstPlayable = 0;
+        for (string = 0 ; string < STRING_COUNT; string++) {
+            var fret = acceptedPermutations[i][string];
+            if (fret != -1) {
+                firstPlayable = string;
+                break;
+            }
+        }
+        var lastPlayable = 0;
+        for (string = (STRING_COUNT - 1) ; string >= 0; string--) {
+            var fret = acceptedPermutations[i][string];
+            if (fret != -1) {
+                lastPlayable = string;
+                break;
+            }
+        }
+        var subset = acceptedPermutations[i].slice(firstPlayable, lastPlayable - firstPlayable + 1);
+        if (subset.indexOf(-1) == -1) {
+            // This is valid
+            playablePermutations.push(acceptedPermutations[i]);
+        }
+    }
+    acceptedPermutations = playablePermutations;
+
+    // Remove all permutations that requires more than 4 fingers
+    var fourFingerPermutations = [];
+    for (var i = 0; i < acceptedPermutations.length;i++) {
+        var nbrFingers = 0;
+        for (string = 0 ; string < STRING_COUNT; string++) {
+            var fret = acceptedPermutations[i][string];
+            if (fret > 0) {
+                nbrFingers++;
+            }
+        }
+        if (nbrFingers > 4) {
+            // Check if barre chord
+            var firstStringFret = acceptedPermutations[i][0];
+            for (string = 1 ; string < STRING_COUNT; string++) {
+                var fret = acceptedPermutations[i][string];
+                if (fret == firstStringFret) {
+                    nbrFingers--;
+                }
+                if (fret < firstStringFret) {
+                    // End of barre chord
+                    break
+                }
+            }           
+        }
+        if (nbrFingers < 5) {
+            fourFingerPermutations.push(acceptedPermutations[i]);
+        }
+    }
+    acceptedPermutations = fourFingerPermutations;
+
+    console.log("all:      " + possiblePermutations.length);
+    console.log("basenote: " + baseNotePermutations.length);
+    console.log("notes:    "    + allNotesPermutations.length);
+    console.log("playable: "    + playablePermutations.length);
+    console.log("4 finger: "    + fourFingerPermutations.length);
+
+    console.log("Possible " + maxFret + ": ");
+    for (var i=0;i < acceptedPermutations.length;i++) {
+        console.log("  " + i + ": " + acceptedPermutations[i]);
+    }
+
+    return acceptedPermutations;
+
+}
+
 // Strings is an array where length equals number of strings.
 // -1 means do not play
 // 0 means open
@@ -487,15 +650,16 @@ function chordSetup() {
 }
 
 function chordSelect() {
-    const MAX_FRET_OFFSETS = 8;
+    const MAX_FRET_OFFSETS = 6;
     var rootNote = document.getElementById("chord-select-root-note").value;
     var chordType = document.getElementById("chord-select-type").value;
     var notes = chordNotes(rootNote,chordType);
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
     var chordCharts = [];
-    for (var startFret = 1; startFret < MAX_FRET_OFFSETS; startFret++) {
-        var cc = chordChartFinder(notes, startFret, startFret + 4);
+    for (var startFret = 1; startFret <= MAX_FRET_OFFSETS; startFret++) {
+        chordChartFinder2(notes, startFret, startFret + 4);
+        var cc = chordChartFinder2(notes, startFret, startFret + 4);
         for (var i = 0; i < cc.length; i++) {
             // Check if already exists
             var duplicate = false;

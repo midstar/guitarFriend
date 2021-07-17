@@ -244,68 +244,6 @@ function chordNotes(rootNote,chordType) {
     return result;
 }
 
-// Returns a list of all possible chordCharts
-function chordChartFinder(notes, minFret, maxFret) {
-    const TUNING_NOTES = settingsGetTuningNotes();
-    const STRING_COUNT = TUNING_NOTES.length;
-    var result = [];
-    var lastBaseNotePoints = 999999;
-    while(true) {
-        var strings = [];
-        TUNING_NOTES.forEach(function() {
-            strings.push(-1);
-        });
-        var availableNotes = [...notes];
-        var baseNoteFound = false;
-        for (string = (STRING_COUNT-1); string >= 0; string--) {
-            for (fret = 0; fret <= maxFret; fret ++) {
-                if ((fret != 0) && (fret < minFret)) {
-                    // Not allowed
-                    continue;
-                }
-                var baseNotePoints = string * 100 + fret;
-                var noteAtFret = noteAt(fret, string);
-                if (baseNoteFound == false) {
-                    if ((noteAtFret == notes[0]) &&
-                        (baseNotePoints < lastBaseNotePoints)) {
-                        lastBaseNotePoints = baseNotePoints;
-                        baseNoteFound = true;
-                        strings[string] = fret;
-                        availableNotes.shift();
-                        break;
-                    }
-                } else {
-                    if (availableNotes.length > 0) {
-                        var index = availableNotes.indexOf(noteAtFret);
-                        if (index > -1) {
-                            strings[string] = fret;
-                            availableNotes.splice(index, 1);
-                            break;
-                        }
-                    }
-                    var index = notes.indexOf(noteAtFret);
-                    if (index > -1) {
-                        strings[string] = fret;
-                        break;
-                    }
-                }
-            }
-            if ((baseNoteFound == true) && (strings[string] == -1)) {
-                // Open stings not allowed after base note
-                break;
-            }
-        }
-        if (baseNoteFound == false) {
-            break; // No more chords found
-        }
-        if ((strings[0] != -1) && availableNotes.length == 0) {
-            // This is a valid chord
-            result.push(strings);
-        }
-
-    }
-    return result;
-}
 
 // Recursive function that returns a list of arrays with
 // same length of the matrix where each array is a unique
@@ -330,7 +268,7 @@ function permutations(matrix, startIndex) {
 }
 
 // Returns a list of all possible chordCharts
-function chordChartFinder2(notes, minFret, maxFret) {
+function chordChartFinder(notes, minFret, maxFret, rootNoteFirst) {
     const TUNING_NOTES = settingsGetTuningNotes();
     const STRING_COUNT = TUNING_NOTES.length;
     const BASE_NOTE = notes[0];
@@ -373,7 +311,9 @@ function chordChartFinder2(notes, minFret, maxFret) {
             }
         }
     }  
-    acceptedPermutations = baseNotePermutations;
+    if (rootNoteFirst) {
+        acceptedPermutations = baseNotePermutations;
+    }
 
     // Only keep permutations where all notes are represented
     var allNotesPermutations = [];
@@ -438,16 +378,27 @@ function chordChartFinder2(notes, minFret, maxFret) {
         if (nbrFingers > 4) {
             // Check if barre chord
             var firstStringFret = acceptedPermutations[i][0];
+            var isBarre = true;
             for (string = 1 ; string < STRING_COUNT; string++) {
                 var fret = acceptedPermutations[i][string];
-                if (fret == firstStringFret) {
-                    nbrFingers--;
+                if ((fret > 0) && (fret < firstStringFret)) {
+                    // This is not a barre chord
+                    isBarre = false;
+                    break;
                 }
-                if (fret < firstStringFret) {
-                    // End of barre chord
-                    break
-                }
-            }           
+            }
+            if (isBarre) {
+                for (string = 1 ; string < STRING_COUNT; string++) {
+                    var fret = acceptedPermutations[i][string];
+                    if (fret == firstStringFret) {
+                        nbrFingers--;
+                    }
+                    if (fret < firstStringFret) {
+                        // End of barre chord
+                        break
+                    }
+                }           
+            }
         }
         if (nbrFingers < 5) {
             fourFingerPermutations.push(acceptedPermutations[i]);
@@ -468,6 +419,29 @@ function chordChartFinder2(notes, minFret, maxFret) {
 
     return acceptedPermutations;
 
+}
+
+// As chordChartFinder but possible to limit the space between
+// highest and lowest fret.
+function chordChartFinderMultiplePos(notes, minFret, maxFret, maxFretSpace, rootNoteFirst) {
+    var chordCharts = [];
+    for (var startFret = minFret; startFret <= (maxFret - maxFretSpace); startFret++) {
+        var cc = chordChartFinder(notes, startFret, startFret + maxFretSpace - 1, rootNoteFirst);
+        for (var i = 0; i < cc.length; i++) {
+            // Check if already exists
+            var duplicate = false;
+            for (var j = 0; j < chordCharts.length; j++) {
+                if (cc[i].join(",") == chordCharts[j].join(",")) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (duplicate == false) {
+                chordCharts.push(cc[i]);
+            }
+        }
+    }
+    return chordCharts;
 }
 
 // Strings is an array where length equals number of strings.
@@ -538,7 +512,7 @@ function chordChart(label,strings) {
     //////////////////////////////////////////////////////////////////////////
     // Draw fret marker 
     if (FRET_START > 1) {
-        ctx.font = Math.round(FRET_OFFSET * 0.3) + "px Arial";
+        ctx.font = Math.round(FRET_OFFSET * 0.25) + "px Arial";
         ctx.fillStyle = "black"; 
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
@@ -650,31 +624,13 @@ function chordSetup() {
 }
 
 function chordSelect() {
-    const MAX_FRET_OFFSETS = 6;
     var rootNote = document.getElementById("chord-select-root-note").value;
+    var rootNotePos = document.getElementById("chord-select-root-note-pos").value;
     var chordType = document.getElementById("chord-select-type").value;
     var notes = chordNotes(rootNote,chordType);
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
-    var chordCharts = [];
-    for (var startFret = 1; startFret <= MAX_FRET_OFFSETS; startFret++) {
-        chordChartFinder2(notes, startFret, startFret + 4);
-        var cc = chordChartFinder2(notes, startFret, startFret + 4);
-        for (var i = 0; i < cc.length; i++) {
-            // Check if already exists
-            var duplicate = false;
-            for (var j = 0; j < chordCharts.length; j++) {
-                if (cc[i].join(",") == chordCharts[j].join(",")) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (duplicate == false) {
-                chordCharts.push(cc[i]);
-            }
-        }
-    }
-    console.log(chordCharts);
+    var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 5, rootNotePos == "first");
     var label = rootNote;
     if (chordType == "minor") {
         label = label + "m";
@@ -963,9 +919,13 @@ function URLSearchParamSet(key, value, reloadPage) {
         <div>
             <select id="chord-select-root-note" onchange="chordSelect()"></select>
             <select id="chord-select-type" onchange="chordSelect()"></select>
+            <select id="chord-select-root-note-pos" onchange="chordSelect()">
+                <option value="first" selected>Root note first</option>
+                <option value="anywhere">Root anywhere (ukelele style)</option>
+            </select>
             <div id="chord-notes"></div>
-            <div id="chord-charts"></div>
         </div>
+        <div id="chord-charts"></div>
     </div>
 
     <!----------------------------------------------------------------------------------->

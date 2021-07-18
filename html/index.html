@@ -66,6 +66,16 @@
     margin-left: 5px;
 }
 
+/****************************************************************************/
+/* Misc style */
+#chord-notes {
+    display: inline;
+}
+
+.chord-chart {
+    margin-top: 5px;
+}
+
 </style>
 </head>
 <script>
@@ -114,7 +124,7 @@ function drawGuitarNotes() {
     // Misc constants
     const STRING_SPACE = 25;
     const STRING_COUNT = settingsGetTuningNotes().length;
-    const FRET_SPACE = 70;
+    const FRET_SPACE = 60;
     const FRET_COUNT = Math.floor(canvas.width / FRET_SPACE) - 1;
     canvas.height = STRING_SPACE * (STRING_COUNT + 2);
 
@@ -202,7 +212,7 @@ function drawGuitarNotes() {
             ctx.fillStyle = backgroundColor;
             var noteText = note;
             if (note.includes("/")) {
-                var rectWidth = Math.round(FRET_SPACE * 0.6);
+                var rectWidth = Math.round(FRET_SPACE * 0.8);
                 var rectHeight = Math.round(STRING_SPACE * 0.8);
                 ctx.rect(centerX - (rectWidth / 2), centerY - (rectHeight / 2), rectWidth, rectHeight);
                 ctx.font = Math.round(STRING_SPACE * 0.4) + "px Arial";
@@ -581,6 +591,7 @@ function chordChart(label,strings) {
     var canvas = document.createElement("canvas");
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
+    canvas.setAttribute("class", "chord-chart")
     var ctx = canvas.getContext("2d");
 
 
@@ -737,7 +748,10 @@ function chordSelect() {
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
     var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 4, rootNotePos == "first");
-    var label = rootNote + GLOB_CHORD_TYPES[chordType]["suffix"];
+    var label = rootNote;
+    if (rootNote.includes("/"))
+        label = rootNote.split("/")[0];
+    label = label + GLOB_CHORD_TYPES[chordType]["suffix"];
     var chordsPage = document.getElementById("chord-charts");
     chordsPage.innerHTML = ""; // Remove all old charts
     chordCharts.forEach(function(strings) {

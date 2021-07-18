@@ -91,7 +91,7 @@ window.onload = function() {
     settingsSetup();
     updateDisplay();
     chordSetup();
-    savedSetup();
+    savedChordSetup();
     window.onresize = updateDisplay;
 }
 
@@ -563,7 +563,7 @@ function chordChart(label,strings) {
 
 
     //////////////////////////////////////////////////////////////////////////
-    // Figure out start fret and "re offset" to fit 5 frets
+    // Figure out start fret and "re offset" to fit FRET_COUNT frets
     var minFret = 9999;
     var maxFret = 0;
     strings.forEach(function(string){
@@ -577,12 +577,13 @@ function chordChart(label,strings) {
         }
     });
     var nbrFrets = maxFret - minFret + 1;
-    if (nbrFrets > 5) {
-        alert("More than 5 frets not supported! Value: " + nbrFrets);
+    if (nbrFrets > FRET_COUNT) {
+        alert("More than " + FRET_COUNT + " frets not supported! Value: " + nbrFrets);
     }
     const FRET_START = Math.max(0, maxFret - FRET_COUNT + 1);
     if (FRET_START > 1) {
-        // Move frets
+        // Move frets (make a copy) to not alter the original object
+        strings = [...strings];
         for (var string = 0; string < strings.length; string++) {
             if (strings[string] > 0) {
                 strings[string] -= (FRET_START - 1);
@@ -761,7 +762,7 @@ function chordSelect() {
     chordCharts.forEach(function(strings) {
         var chordChartCanvas = chordChart(label,strings);
         chordChartCanvas.onclick = function() {
-            savedChordsSave(label, strings);
+            savedChordsAdd(label, strings);
         }
         chordsPage.appendChild(chordChartCanvas);
     });
@@ -787,11 +788,19 @@ function savedChordsLoad() {
     return result;
 }
 
-function savedChordsSave(label, strings) {
+function savedChordsSave(entries, reloadPage) {
+    var entriesStr = [];
+    entries.forEach(function(entry){
+            entriesStr.push(entry["label"] + ";" + entry["strings"].join(","));
+        });
+    URLSearchParamSet("saved", entriesStr.join("|"), reloadPage);
+}
+
+function savedChordsAdd(label, strings) {
     var entries = savedChordsLoad();
     var isDuplicate = false;
     entries.forEach(function(entry){
-        if ((label == entry["label"]) && (strings.join(",") == entry["strings"])) {
+        if ((label == entry["label"]) && (strings.join(",") == entry["strings"].join(","))) {
             isDuplicate = true;
         }
     });
@@ -801,11 +810,7 @@ function savedChordsSave(label, strings) {
             "strings" : strings
         };
         entries.push(newEntry);
-        var entriesStr = [];
-        entries.forEach(function(entry){
-            entriesStr.push(entry["label"] + ";" + entry["strings"].join(","));
-        });
-        URLSearchParamSet("saved", entriesStr.join("|"), false);
+        savedChordsSave(entries, false);
     }
     URLSearchParamSet("tab_selected", "tab-saved", true); // Go to saved page
 }
@@ -814,13 +819,34 @@ function savedChordsRemoveAll() {
     URLSearchParamSet("saved", "", true);
 }
 
-function savedSetup() {
+function savedChordsRemove(label, strings) {
+    var entries = savedChordsLoad();
+    var removeIndex = -1;
+    for (var i = 0; i < entries.length ; i++) {
+        if ((label == entries[i]["label"]) && 
+            (strings.join(",") == entries[i]["strings"].join(","))) {
+            removeIndex = i;
+            break;
+        }
+    }
+    if (removeIndex >= 0) {
+        entries.splice(removeIndex, 1);
+        savedChordsSave(entries, true);
+    }
+}
+
+function savedChordSetup() {
     var entries = savedChordsLoad();
     var savedChordsPage = document.getElementById("saved-chord-charts");
     entries.forEach(function(entry){
         var chordChartCanvas = chordChart(entry["label"],entry["strings"]);
+        chordChartCanvas.onclick = function() {
+            savedChordsRemove(entry["label"], entry["strings"]);
+        }
         savedChordsPage.appendChild(chordChartCanvas);
     });
+    if (entries.length == 0) 
+        document.getElementById("saved-chord-charts-remove").disabled = true;
 }
 
 
@@ -1115,7 +1141,7 @@ function URLSearchParamSet(key, value, reloadPage) {
     <!-- Saved TAB -->
     <div class="tab-page" id="tab-saved-page">
         <div id="saved-chord-charts"></div>
-        <button onclick="savedChordsRemoveAll()">Remove all</button>
+        <button id="saved-chord-charts-remove" onclick="savedChordsRemoveAll()">Remove all</button>
     </div>
 
     <!----------------------------------------------------------------------------------->

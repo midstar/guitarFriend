@@ -226,21 +226,52 @@ function drawGuitarNotes() {
 //////////////////////////////////////////////////////////////////////////////
 // TAB chords
 
-const GLOB_CHORD_TYPES = ["major", "minor"];
+// Defines which notes to used based on chord type.
+const GLOB_CHORD_TYPES = {
+    "major" : {
+        "suffix"   : "",
+        "interval" : [4, 7]
+    },
+    "minor" : {
+        "suffix"   : "m",
+        "interval" : [3, 7]
+    },
+    "augmented" : {
+        "suffix"   : "aug",
+        "interval" : [4, 8]
+    },
+    "diminished" : {
+        "suffix"   : "dim",
+        "interval" : [3, 6]
+    },
+    "suspended 2" : {
+        "suffix"   : "sus2",
+        "interval" : [2, 7]
+    },
+    "suspended 4" : {
+        "suffix"   : "sus4",
+        "interval" : [5, 7]
+    },
+    "major 7" : {
+        "suffix"   : "7",
+        "interval" : [4, 7, 10]
+    },
+    "minor 7" : {
+        "suffix"   : "m7",
+        "interval" : [3, 7, 10]
+    },
+    "diminished 7" : {
+        "suffix"   : "dim7",
+        "interval" : [3, 6, 9]
+    }
+};
 
 // Get involved notes in a chord
 function chordNotes(rootNote,chordType) {
     var result = [rootNote];
-    switch(chordType) {
-        case "major":
-            result.push(noteAtOffset(rootNote, 4)); // Major third
-            result.push(noteAtOffset(rootNote, 7)); // Perfect fifth
-            break;
-        case "minor":
-            result.push(noteAtOffset(rootNote, 3)); // Minor third
-            result.push(noteAtOffset(rootNote, 7)); // Perfect fifth
-            break;
-    }
+    GLOB_CHORD_TYPES[chordType]["interval"].forEach(function(noteOffset){
+        result.push(noteAtOffset(rootNote, noteOffset));
+    });
     return result;
 }
 
@@ -670,14 +701,14 @@ function chordSetup() {
    
     // Update chord root note selection
     var chordTypeSelect = document.getElementById("chord-select-type");
-    GLOB_CHORD_TYPES.forEach(function (type) {
+    for (type in GLOB_CHORD_TYPES) {
         var elemOption = document.createElement("option");
         elemOption.setAttribute("value", type);
         elemOption.innerText = type;
         if (chordType == type)
             elemOption.setAttribute("selected", "");
         chordTypeSelect.appendChild(elemOption);
-    });
+    }
 
     // Select saved correct root note pos
     var rootNotePosSelect = document.getElementById("chord-select-root-note-pos");
@@ -705,10 +736,7 @@ function chordSelect() {
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
     var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 5, rootNotePos == "first");
-    var label = rootNote;
-    if (chordType == "minor") {
-        label = label + "m";
-    }
+    var label = rootNote + GLOB_CHORD_TYPES[chordType]["suffix"];
     var chordsPage = document.getElementById("chord-charts");
     chordsPage.innerHTML = ""; // Remove all old charts
     chordCharts.forEach(function(strings) {

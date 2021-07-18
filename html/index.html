@@ -244,6 +244,98 @@ function chordNotes(rootNote,chordType) {
     return result;
 }
 
+// Get number of fingers required for the chord chart
+function chordChartNumberOfFingers(strings) {
+    const STRING_COUNT = strings.length;
+    var nbrFingers = 0;
+    for (string = 0 ; string < STRING_COUNT; string++) {
+        var fret = strings[string];
+        if (fret > 0) {
+            nbrFingers++;
+        }
+    }
+    var firstStringFret = strings[0];
+    if (firstStringFret > 0) {
+        // Check if barre chord
+        var isBarre = true;
+        for (string = 1 ; string < STRING_COUNT; string++) {
+            var fret = strings[string];
+            var endBarre = false;
+            if ((fret > 0) && (fret < firstStringFret)) {
+                // This is not a barre chord
+                isBarre = false;
+                break;
+            }
+            if ((endBarre == false) && (fret > -1) && (fret != firstStringFret)) {
+                endBarre = true;
+            } else if ((endBarre == true) && (fret > 0)) {
+                // This is not a barre chord
+                isBarre = false;
+                break;  
+            }
+        }
+        if (isBarre) {
+            for (string = 1 ; string < STRING_COUNT; string++) {
+                var fret = strings[string];
+                if (fret == firstStringFret) {
+                    nbrFingers--;
+                }
+                else if ((fret > -1) && (fret < firstStringFret)) {
+                    // End of barre chord
+                    break
+                }
+            }           
+        }
+    }
+    return nbrFingers;
+}
+
+// Get complexity of chord chart. Used when comparing / sorting
+// the chord charts.
+//
+// High value means high complexity. 0 is no complexity which is
+// all playable and open strings.
+function chordChartComplexity(strings) {
+    const STRING_COUNT = strings.length;
+
+    // Many fingers more complex
+    var numberOfFingers = chordChartNumberOfFingers(strings)
+    var complexity = numberOfFingers;
+
+    if ((strings[0] == -1) && (strings[STRING_COUNT - 1] == -1))
+        complexity += 10; // Starting and ending with non-played string
+    else if (strings[0] == -1)
+        complexity += 5; // Ending with non-played string
+    else if (strings[STRING_COUNT - 1] == -1)
+        complexity += 1; // Starting with non-played string
+
+    // Check spread of fingers
+    if (numberOfFingers > 0) {
+        var lowestFret = 9999;
+        var highestFret = 1;
+        for (string = 0 ; string < STRING_COUNT; string++) {
+            var fret = strings[string];
+            if (fret > 0) {
+                if (fret < lowestFret)
+                    lowestFret = fret;
+                if (fret > highestFret)
+                    highestFret = fret;
+            }
+        }
+        var fretDiff = highestFret - lowestFret;
+        if (fretDiff == 3) {
+            complexity += 1;
+        } else if (fretDiff > 3) {
+            complexity += 5; // This is tough
+        }
+    }
+
+    return complexity;
+}
+
+function chordChartCompare(strings1, strings2) {
+    return chordChartComplexity(strings1) - chordChartComplexity(strings2);
+}
 
 // Recursive function that returns a list of arrays with
 // same length of the matrix where each array is a unique
@@ -368,54 +460,14 @@ function chordChartFinder(notes, minFret, maxFret, rootNoteFirst) {
     // Remove all permutations that requires more than 4 fingers
     var fourFingerPermutations = [];
     for (var i = 0; i < acceptedPermutations.length;i++) {
-        var nbrFingers = 0;
-        for (string = 0 ; string < STRING_COUNT; string++) {
-            var fret = acceptedPermutations[i][string];
-            if (fret > 0) {
-                nbrFingers++;
-            }
-        }
-        if (nbrFingers > 4) {
-            // Check if barre chord
-            var firstStringFret = acceptedPermutations[i][0];
-            var isBarre = true;
-            for (string = 1 ; string < STRING_COUNT; string++) {
-                var fret = acceptedPermutations[i][string];
-                if ((fret > 0) && (fret < firstStringFret)) {
-                    // This is not a barre chord
-                    isBarre = false;
-                    break;
-                }
-            }
-            if (isBarre) {
-                for (string = 1 ; string < STRING_COUNT; string++) {
-                    var fret = acceptedPermutations[i][string];
-                    if (fret == firstStringFret) {
-                        nbrFingers--;
-                    }
-                    if (fret < firstStringFret) {
-                        // End of barre chord
-                        break
-                    }
-                }           
-            }
-        }
-        if (nbrFingers < 5) {
+        if (chordChartNumberOfFingers(acceptedPermutations[i]) < 5) {
             fourFingerPermutations.push(acceptedPermutations[i]);
         }
     }
     acceptedPermutations = fourFingerPermutations;
 
-    console.log("all:      " + possiblePermutations.length);
-    console.log("basenote: " + baseNotePermutations.length);
-    console.log("notes:    "    + allNotesPermutations.length);
-    console.log("playable: "    + playablePermutations.length);
-    console.log("4 finger: "    + fourFingerPermutations.length);
-
-    console.log("Possible " + maxFret + ": ");
-    for (var i=0;i < acceptedPermutations.length;i++) {
-        console.log("  " + i + ": " + acceptedPermutations[i]);
-    }
+    // Sort according to complexity
+    acceptedPermutations.sort(chordChartCompare);
 
     return acceptedPermutations;
 

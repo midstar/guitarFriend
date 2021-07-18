@@ -96,7 +96,7 @@ window.onload = function() {
 }
 
 function updateDisplay() {
-    drawGuitarNotes();
+    drawGuitarNotes("guitar-canvas");
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -118,8 +118,8 @@ function playSound(frequency, type) {
 //////////////////////////////////////////////////////////////////////////////
 // TAB notes
 
-function drawGuitarNotes() {
-    var canvas = document.getElementById("guitar-canvas");
+function drawGuitarNotes(canvasId, noteFilter = []) {
+    var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
 
@@ -186,6 +186,11 @@ function drawGuitarNotes() {
 
             var note = noteAt(fret, string);
             var octave = octaveAt(fret, string);
+
+            if (noteFilter.length != 0) {
+                if (noteFilter.indexOf(note) == -1) 
+                    continue; // Filtered out
+            }
 
             var backgroundColor= "white";
             var textColor = "black";
@@ -764,8 +769,10 @@ function chordSelect() {
         chordChartCanvas.onclick = function() {
             savedChordsAdd(label, strings);
         }
-        chordsPage.appendChild(chordChartCanvas);
+        chordsPage.appendChild(chordChartCanvas, notes);
     });
+
+    drawGuitarNotes("chord-guitar-canvas", notes);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1135,6 +1142,7 @@ function URLSearchParamSet(key, value, reloadPage) {
             <div id="chord-notes"></div>
         </div>
         <div id="chord-charts"></div>
+        <canvas id="chord-guitar-canvas"></canvas>
     </div>
 
     <!----------------------------------------------------------------------------------->

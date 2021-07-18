@@ -75,6 +75,9 @@
 .chord-chart {
     margin-top: 5px;
 }
+.chord-chart:hover {
+    cursor: grab;
+}
 
 </style>
 </head>
@@ -88,6 +91,7 @@ window.onload = function() {
     settingsSetup();
     updateDisplay();
     chordSetup();
+    savedSetup();
     window.onresize = updateDisplay;
 }
 
@@ -755,9 +759,70 @@ function chordSelect() {
     var chordsPage = document.getElementById("chord-charts");
     chordsPage.innerHTML = ""; // Remove all old charts
     chordCharts.forEach(function(strings) {
-        chordsPage.appendChild(chordChart(label,strings));
+        var chordChartCanvas = chordChart(label,strings);
+        chordChartCanvas.onclick = function() {
+            savedChordsSave(label, strings);
+        }
+        chordsPage.appendChild(chordChartCanvas);
     });
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// TAB saved
+
+function savedChordsLoad() {
+    var result = [];
+    var saved = URLSearchParamGet("saved", "").split("|");
+    if (saved == "")
+        saved = [];
+    saved.forEach(function(chord){
+        var s = chord.split(";");
+        var entry = {};
+        entry["label"] = s[0];
+        entry["strings"] = s[1].split(",").map(function(item) {
+            return parseInt(item, 10);
+        });
+        result.push(entry);
+    });
+    return result;
+}
+
+function savedChordsSave(label, strings) {
+    var entries = savedChordsLoad();
+    var isDuplicate = false;
+    entries.forEach(function(entry){
+        if ((label == entry["label"]) && (strings.join(",") == entry["strings"])) {
+            isDuplicate = true;
+        }
+    });
+    if (isDuplicate == false) {
+        var newEntry = {
+            "label"   : label,
+            "strings" : strings
+        };
+        entries.push(newEntry);
+        var entriesStr = [];
+        entries.forEach(function(entry){
+            entriesStr.push(entry["label"] + ";" + entry["strings"].join(","));
+        });
+        URLSearchParamSet("saved", entriesStr.join("|"), false);
+    }
+    URLSearchParamSet("tab_selected", "tab-saved", true); // Go to saved page
+}
+
+function savedChordsRemoveAll() {
+    URLSearchParamSet("saved", "", true);
+}
+
+function savedSetup() {
+    var entries = savedChordsLoad();
+    var savedChordsPage = document.getElementById("saved-chord-charts");
+    entries.forEach(function(entry){
+        var chordChartCanvas = chordChart(entry["label"],entry["strings"]);
+        savedChordsPage.appendChild(chordChartCanvas);
+    });
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // TAB settings
@@ -1021,6 +1086,7 @@ function URLSearchParamSet(key, value, reloadPage) {
     <div class="tab">
         <button class="tab-button" id="tab-notes">NOTES</button>
         <button class="tab-button" id="tab-chords">CHORDS</button>
+        <button class="tab-button" id="tab-saved">SAVED</button>
         <button class="tab-button" id="tab-settings">&#9881;</button>
     </div>
 
@@ -1043,6 +1109,13 @@ function URLSearchParamSet(key, value, reloadPage) {
             <div id="chord-notes"></div>
         </div>
         <div id="chord-charts"></div>
+    </div>
+
+    <!----------------------------------------------------------------------------------->
+    <!-- Saved TAB -->
+    <div class="tab-page" id="tab-saved-page">
+        <div id="saved-chord-charts"></div>
+        <button onclick="savedChordsRemoveAll()">Remove all</button>
     </div>
 
     <!----------------------------------------------------------------------------------->

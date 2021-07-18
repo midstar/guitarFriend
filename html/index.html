@@ -653,13 +653,18 @@ function chordChart(label,strings) {
 }
 
 function chordSetup() {
-     
+    var rootNote = URLSearchParamGet("root_note");
+    var chordType = URLSearchParamGet("chord_type");
+    var rootNotePos = URLSearchParamGet("root_note_pos");
+
     // Update chord root note selection
     var rootNoteSelect = document.getElementById("chord-select-root-note");
     GLOB_NOTES.forEach(function (note) {
         var elemOption = document.createElement("option");
         elemOption.setAttribute("value", note);
         elemOption.innerText = note;
+        if (rootNote == note)
+            elemOption.setAttribute("selected", "");
         rootNoteSelect.appendChild(elemOption);
     });
    
@@ -669,16 +674,33 @@ function chordSetup() {
         var elemOption = document.createElement("option");
         elemOption.setAttribute("value", type);
         elemOption.innerText = type;
+        if (chordType == type)
+            elemOption.setAttribute("selected", "");
         chordTypeSelect.appendChild(elemOption);
     });
+
+    // Select saved correct root note pos
+    var rootNotePosSelect = document.getElementById("chord-select-root-note-pos");
+    var options = rootNotePosSelect.getElementsByTagName("option");
+    for (var option of options) {
+        if (option.getAttribute("value") == rootNotePos) {
+            option.setAttribute("selected", "");
+        }
+    }
 
     chordSelect();
 }
 
 function chordSelect() {
     var rootNote = document.getElementById("chord-select-root-note").value;
-    var rootNotePos = document.getElementById("chord-select-root-note-pos").value;
     var chordType = document.getElementById("chord-select-type").value;
+    var rootNotePos = document.getElementById("chord-select-root-note-pos").value;
+
+    // Save
+    URLSearchParamSet("root_note", rootNote, false);
+    URLSearchParamSet("chord_type", chordType, false);
+    URLSearchParamSet("root_note_pos", rootNotePos, false);
+
     var notes = chordNotes(rootNote,chordType);
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;

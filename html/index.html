@@ -355,10 +355,8 @@ function chordChartComplexity(strings) {
             }
         }
         var fretDiff = highestFret - lowestFret;
-        if (fretDiff == 3) {
-            complexity += 1;
-        } else if (fretDiff > 3) {
-            complexity += 5; // This is tough
+        if (fretDiff >= 3) {
+            complexity += 2;
         }
     }
 
@@ -541,11 +539,12 @@ function chordChartFinderMultiplePos(notes, minFret, maxFret, maxFretSpace, root
 function chordChart(label,strings) {
     const STRING_SPACE = 15;
     const STRING_COUNT = strings.length;
-    const STRING_OFFSET = STRING_SPACE * 2;
+    const STRING_OFFSET_LEFT = STRING_SPACE / 2;
+    const STRING_OFFSET_RIGHT = STRING_SPACE * 2;
     const FRET_SPACE = 20;
-    const FRET_COUNT = 5;
+    const FRET_COUNT = 4;
     const FRET_OFFSET = FRET_SPACE * 1.5;
-    const WIDTH = STRING_SPACE * (STRING_COUNT - 1) + STRING_OFFSET * 2;
+    const WIDTH = STRING_SPACE * (STRING_COUNT - 1) + STRING_OFFSET_LEFT + STRING_OFFSET_RIGHT;
     const HEIGHT = FRET_OFFSET + FRET_SPACE * FRET_COUNT + FRET_SPACE / 2;
 
 
@@ -591,7 +590,7 @@ function chordChart(label,strings) {
     ctx.fillStyle = "black"; 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, WIDTH / 2, FRET_OFFSET * 0.3);
+    ctx.fillText(label, STRING_OFFSET_LEFT + (WIDTH - STRING_OFFSET_LEFT - STRING_OFFSET_RIGHT) / 2, FRET_OFFSET * 0.3);
 
     //////////////////////////////////////////////////////////////////////////
     // Draw fret marker 
@@ -600,12 +599,13 @@ function chordChart(label,strings) {
         ctx.fillStyle = "black"; 
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.fillText("Fret " + FRET_START, WIDTH - STRING_OFFSET*0.9, FRET_OFFSET + FRET_SPACE / 2);
+        ctx.fillText("Fret " + FRET_START, WIDTH - STRING_OFFSET_RIGHT*0.9, FRET_OFFSET + FRET_SPACE / 2);
     }
 
     //////////////////////////////////////////////////////////////////////////
     // Draw string markers
     ctx.font = Math.round(FRET_OFFSET * 0.35) + "px Arial";
+        ctx.textAlign = "center";
     for (var string = 0; string < STRING_COUNT; string++) {
         var text = "";
         switch(strings[string]) {
@@ -615,14 +615,14 @@ function chordChart(label,strings) {
             case 0:
                 text = "o"
         }
-        ctx.fillText(text, STRING_OFFSET + STRING_SPACE * (STRING_COUNT - 1) - STRING_SPACE * string, 
+        ctx.fillText(text, STRING_OFFSET_LEFT + STRING_SPACE * (STRING_COUNT - 1) - STRING_SPACE * string, 
                      FRET_OFFSET*0.8);
     }
 
     //////////////////////////////////////////////////////////////////////////
     // Thicker line on fret 0
     ctx.beginPath();
-    ctx.rect(STRING_OFFSET, FRET_OFFSET - 1, WIDTH - STRING_OFFSET * 2, 2);
+    ctx.rect(STRING_OFFSET_LEFT, FRET_OFFSET - 1, WIDTH - STRING_OFFSET_LEFT - STRING_OFFSET_RIGHT, 2);
     ctx.stroke();  
     ctx.fill();     
 
@@ -630,8 +630,8 @@ function chordChart(label,strings) {
     // Draw strings
     for (var string = 0; string < STRING_COUNT; string++) {
         ctx.beginPath();
-        ctx.moveTo(STRING_OFFSET + string * STRING_SPACE, FRET_OFFSET);
-        ctx.lineTo(STRING_OFFSET + string * STRING_SPACE, FRET_OFFSET + FRET_SPACE * FRET_COUNT);
+        ctx.moveTo(STRING_OFFSET_LEFT + string * STRING_SPACE, FRET_OFFSET);
+        ctx.lineTo(STRING_OFFSET_LEFT + string * STRING_SPACE, FRET_OFFSET + FRET_SPACE * FRET_COUNT);
         ctx.stroke();        
     }
 
@@ -639,8 +639,8 @@ function chordChart(label,strings) {
     // Draw frets
     for (var fret = 0; fret < (FRET_COUNT + 1); fret++) {
         ctx.beginPath();
-        ctx.moveTo(STRING_OFFSET, FRET_OFFSET + FRET_SPACE * fret);
-        ctx.lineTo(STRING_OFFSET + (STRING_COUNT - 1) * STRING_SPACE,  FRET_OFFSET + FRET_SPACE * fret);
+        ctx.moveTo(STRING_OFFSET_LEFT, FRET_OFFSET + FRET_SPACE * fret);
+        ctx.lineTo(STRING_OFFSET_LEFT + (STRING_COUNT - 1) * STRING_SPACE,  FRET_OFFSET + FRET_SPACE * fret);
         ctx.stroke();        
     }
 
@@ -650,7 +650,7 @@ function chordChart(label,strings) {
         var fret = strings[string];
         if (fret > 0) {
             ctx.beginPath();
-            ctx.arc(STRING_OFFSET + STRING_SPACE * (STRING_COUNT - 1) - STRING_SPACE * string, 
+            ctx.arc(STRING_OFFSET_LEFT + STRING_SPACE * (STRING_COUNT - 1) - STRING_SPACE * string, 
                     FRET_OFFSET + FRET_SPACE * fret - FRET_SPACE / 2, 
                     Math.round(STRING_SPACE * 0.3), 0, 2 * Math.PI);
             ctx.stroke(); 
@@ -673,7 +673,7 @@ function chordChart(label,strings) {
         }
         if (lastString > 0) {
             ctx.beginPath();
-            ctx.rect(WIDTH - STRING_OFFSET - STRING_SPACE * lastString, 
+            ctx.rect(WIDTH - STRING_OFFSET_RIGHT - STRING_SPACE * lastString, 
                      FRET_OFFSET + FRET_SPACE * barreFret - FRET_SPACE / 2 - 1, 
                      lastString*STRING_SPACE, 2);
             ctx.stroke(); 
@@ -736,7 +736,7 @@ function chordSelect() {
     var notes = chordNotes(rootNote,chordType);
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
-    var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 5, rootNotePos == "first");
+    var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 4, rootNotePos == "first");
     var label = rootNote + GLOB_CHORD_TYPES[chordType]["suffix"];
     var chordsPage = document.getElementById("chord-charts");
     chordsPage.innerHTML = ""; // Remove all old charts

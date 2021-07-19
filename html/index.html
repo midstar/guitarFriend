@@ -86,17 +86,20 @@
 //////////////////////////////////////////////////////////////////////////
 // Misc
 
+var globChordNotes = [];
+
 window.onload = function() {
     tabSetup();
-    settingsSetup();
-    updateDisplay();
     chordSetup();
     savedChordSetup();
+    settingsSetup();
+    updateDisplay();
     window.onresize = updateDisplay;
 }
 
 function updateDisplay() {
     drawGuitarNotes("guitar-canvas");
+    drawGuitarNotes("chord-guitar-canvas", globChordNotes);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -771,8 +774,8 @@ function chordSelect() {
         }
         chordsPage.appendChild(chordChartCanvas, notes);
     });
-
-    drawGuitarNotes("chord-guitar-canvas", notes);
+    globChordNotes = notes; // Needed for guitar notes
+    updateDisplay();
 }
 
 //////////////////////////////////////////////////////////////////////////////

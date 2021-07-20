@@ -98,8 +98,9 @@ window.onload = function() {
 }
 
 function updateDisplay() {
-    drawGuitarNotes("guitar-canvas");
-    drawGuitarNotes("chord-guitar-canvas", globChordNotes);
+    drawNotes("chord-guitar-notes");
+    drawFretBoard("guitar-fretboard");
+    drawFretBoard("chord-guitar-fretboard", globChordNotes);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -121,7 +122,7 @@ function playSound(frequency, type) {
 //////////////////////////////////////////////////////////////////////////////
 // TAB notes
 
-function drawGuitarNotes(canvasId, noteFilter = []) {
+function drawFretBoard(canvasId, noteFilter = []) {
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
@@ -242,8 +243,50 @@ function drawGuitarNotes(canvasId, noteFilter = []) {
             ctx.fillText(noteText, centerX, centerY);
         }
     }
+}
 
+function drawNoteSymbol(ctx, x, y, height, shaftUp) {
+    var rotation = Math.PI / -10;
+    var radiusY = height / 2;
+    var width = height * 1.4;
+    var radiusX = width / 2;
+    ctx.strokeStyle = "black";
+    ctx.fillStyle = "black"; 
 
+    // Draw note body
+    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.ellipse(x, y, radiusX, radiusY, rotation, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.fill();
+
+    // Draw note "shaft"
+    ctx.beginPath();
+    var shaftWidth = height * 0.1;
+    var shaftHeight = height * 4;
+    var shaftXOffset = radiusX * Math.cos(rotation);
+    var shaftYOffset = radiusX * Math.sin(rotation);
+    var shaftX = x + shaftXOffset - shaftWidth;
+    var shaftY = y + shaftYOffset - shaftHeight;
+    if (shaftUp == false) {
+        shaftX = x - shaftXOffset;
+        shaftY = y - shaftYOffset;
+    }
+    ctx.rect(shaftX, shaftY, shaftWidth, shaftHeight);
+    ctx.stroke();
+    ctx.fill();
+
+}
+
+function drawNotes(canvasId, clef = "G") {
+    var canvas = document.getElementById(canvasId);
+    var parentStyle = window.getComputedStyle(canvas.parentElement);
+    canvas.width = parseFloat(parentStyle.width);
+    canvas.height = 200;
+
+    var ctx = canvas.getContext("2d");
+    drawNoteSymbol(ctx, 100, 100, 20, true);
+    drawNoteSymbol(ctx, 200, 100, 20, false);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1129,7 +1172,8 @@ function URLSearchParamSet(key, value, reloadPage) {
     <!----------------------------------------------------------------------------------->
     <!-- Tones TAB -->
     <div class="tab-page" id="tab-notes-page">
-        <canvas id="guitar-canvas"></canvas>
+        <canvas id="guitar-fretboard"></canvas>
+        <canvas id="chord-guitar-notes"></canvas>
     </div>
 
     <!----------------------------------------------------------------------------------->
@@ -1145,7 +1189,7 @@ function URLSearchParamSet(key, value, reloadPage) {
             <div id="chord-notes"></div>
         </div>
         <div id="chord-charts"></div>
-        <canvas id="chord-guitar-canvas"></canvas>
+        <canvas id="chord-guitar-fretboard"></canvas>
     </div>
 
     <!----------------------------------------------------------------------------------->

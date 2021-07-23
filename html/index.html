@@ -312,14 +312,33 @@ function drawNotes(canvasId, clef = "G") {
         else   
             shaftUp = true;
         drawNoteSymbol(ctx, noteX, noteY, NOTE_LINE_SPACE, shaftUp);
+
+        //////////////////////////////////
+        // Draw help lines
+        var halfhelpLineWidth = (NOTE_SPACE * 5 / 2);
+
+        // Below
+        var lineY = NOTE_LINE_OFFSET + NOTE_LINE_SPACE * NOTE_LINES;
+        while (lineY <= noteY) {
+            ctx.beginPath();
+            ctx.moveTo(noteX - halfhelpLineWidth, lineY);
+            ctx.lineTo(noteX + halfhelpLineWidth, lineY);
+            ctx.stroke();  
+            lineY += NOTE_LINE_SPACE;
+        }
+        // Above
+        var lineY = NOTE_LINE_OFFSET - NOTE_LINE_SPACE;
+        while (lineY >= noteY) {
+            ctx.beginPath();
+            ctx.moveTo(noteX - halfhelpLineWidth, lineY);
+            ctx.lineTo(noteX + halfhelpLineWidth, lineY);
+            ctx.stroke();  
+            lineY -= NOTE_LINE_SPACE;
+        }
+
         noteX += NOTE_SPREAD;
         noteY -= NOTE_SPACE;
     }
-    /*
-    drawNoteSymbol(ctx, 50, NOTE_SPACE * 3 + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, false);
-    drawNoteSymbol(ctx, 100, NOTE_SPACE * 5 + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, true);
-    drawNoteSymbol(ctx, 150, NOTE_SPACE * 5 + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, true);
-    drawNoteSymbol(ctx, 200, NOTE_SPACE + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, false);*/
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -98,7 +98,7 @@ window.onload = function() {
 }
 
 function updateDisplay() {
-    drawNotes("chord-guitar-notes");
+    drawNotes("chord-guitar-notes", "G-clef (treble)");
     drawFretBoard("guitar-fretboard");
     drawFretBoard("chord-guitar-fretboard", globChordNotes);
 }
@@ -121,6 +121,21 @@ function playSound(frequency, type) {
 
 //////////////////////////////////////////////////////////////////////////////
 // TAB notes
+
+const GLOB_CLEF_TYPES = {
+    "G-clef (treble)" : {
+        "note"   : "E", // At bottom bar
+        "octave" : 4
+    },
+    "F-clef (bass)" : {
+        "note"   : "G", // At bottom bar
+        "octave" : 2
+    },
+    "C-clef (alto)" : {
+        "note"   : "F", // At bottom bar
+        "octave" : 3
+    }
+};
 
 function drawFretBoard(canvasId, noteFilter = []) {
     var canvas = document.getElementById(canvasId);
@@ -278,19 +293,28 @@ function drawNoteSymbol(ctx, x, y, height, shaftUp) {
 
 }
 
-function drawNotes(canvasId, clef = "G") {
+function drawNotes(canvasId, clef) {
     const NOTE_SPACE = 4;
     const NOTE_LINES = 5;
     const NOTE_LINE_SPACE = NOTE_SPACE * 2;
     const NOTE_LINE_OFFSET = NOTE_LINE_SPACE * 7;
     const NOTE_COUNT = 24;
+    const FIRST_NOTE_Y = NOTE_LINE_OFFSET + NOTE_SPACE * 15;
+    const TAB_OFFSET = FIRST_NOTE_Y + NOTE_LINE_SPACE * 3;
+    const STRING_COUNT = settingsGetTuningNotes().length;
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
-    canvas.height = NOTE_SPACE * NOTE_LINES + NOTE_LINE_OFFSET * 2;
+    canvas.height = TAB_OFFSET + NOTE_LINE_SPACE * (STRING_COUNT + 1);
     const NOTE_SPREAD = canvas.width / (NOTE_COUNT + 1);
 
     var ctx = canvas.getContext("2d");
+
+    //////////////////////////////////////////////////////////////////////////
+    // Figure out note name based on clef
+    var noteRow1 = GLOB_CLEF_TYPES[clef]["note"];
+    var octaveRow1 = GLOB_CLEF_TYPES[clef]["octave"];
+    var noteIndexRow1 = GLOB_NATURAL_NOTES.indexOf(noteRow1);
 
     //////////////////////////////////////////////////////////////////////////
     // Draw note lines
@@ -302,8 +326,19 @@ function drawNotes(canvasId, clef = "G") {
     }
 
     //////////////////////////////////////////////////////////////////////////
+    // Draw guitar strings
+    for (var i = 0 ; i < STRING_COUNT ; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, NOTE_LINE_SPACE * i + TAB_OFFSET);
+        ctx.lineTo(canvas.width, NOTE_LINE_SPACE * i + TAB_OFFSET);
+        ctx.stroke();         
+    }
+
+
+
+    //////////////////////////////////////////////////////////////////////////
     // Draw notes
-    var noteY = NOTE_LINE_OFFSET + NOTE_SPACE * 15;
+    var noteY = FIRST_NOTE_Y;
     var noteX = NOTE_SPREAD;
     var shaftUp = true;
     for (var i = 0 ; i < NOTE_COUNT ; i++) {
@@ -315,14 +350,14 @@ function drawNotes(canvasId, clef = "G") {
 
         //////////////////////////////////
         // Draw help lines
-        var halfhelpLineWidth = (NOTE_SPACE * 5 / 2);
+        var halfHelpLineWidth = (NOTE_SPACE * 5 / 2);
 
         // Below
         var lineY = NOTE_LINE_OFFSET + NOTE_LINE_SPACE * NOTE_LINES;
         while (lineY <= noteY) {
             ctx.beginPath();
-            ctx.moveTo(noteX - halfhelpLineWidth, lineY);
-            ctx.lineTo(noteX + halfhelpLineWidth, lineY);
+            ctx.moveTo(noteX - halfHelpLineWidth, lineY);
+            ctx.lineTo(noteX + halfHelpLineWidth, lineY);
             ctx.stroke();  
             lineY += NOTE_LINE_SPACE;
         }
@@ -330,11 +365,44 @@ function drawNotes(canvasId, clef = "G") {
         var lineY = NOTE_LINE_OFFSET - NOTE_LINE_SPACE;
         while (lineY >= noteY) {
             ctx.beginPath();
-            ctx.moveTo(noteX - halfhelpLineWidth, lineY);
-            ctx.lineTo(noteX + halfhelpLineWidth, lineY);
+            ctx.moveTo(noteX - halfHelpLineWidth, lineY);
+            ctx.lineTo(noteX + halfHelpLineWidth, lineY);
             ctx.stroke();  
             lineY -= NOTE_LINE_SPACE;
         }
+
+        //////////////////////////////////
+        // Figure out note name
+        var notesFromRow1 = Math.round(((NOTE_LINE_OFFSET + NOTE_LINE_SPACE * (NOTE_LINES - 1)) - noteY) / NOTE_SPACE);
+        var step = 1;
+        if (notesFromRow1 < 0) {
+            step = -1;
+            notesFromRow1 = -1 * notesFromRow1;
+        }
+        var index = noteIndexRow1;
+        var octave = octaveRow1;
+        for (var j = 0 ; j < notesFromRow1 ; j++) {
+            index += step;
+            if (index < 0) {
+                index = GLOB_NATURAL_NOTES.length - 1;
+                octave -= 1;
+            }
+            else if (index >= GLOB_NATURAL_NOTES.length) {
+                index = 0;
+                octave += 1;
+            }
+        }
+        var note = GLOB_NATURAL_NOTES[index];
+
+        //////////////////////////////////
+        // Draw note name
+        ctx.font = Math.round(NOTE_LINE_SPACE * 1.2) + "px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        var textY = noteY - NOTE_LINE_SPACE * 1.2;
+        if (shaftUp)
+            textY = noteY + NOTE_LINE_SPACE * 1.2;
+        ctx.fillText(note + octave, noteX, textY);        
 
         noteX += NOTE_SPREAD;
         noteY -= NOTE_SPACE;
@@ -977,6 +1045,7 @@ const GLOB_STD_TUNINGS = {
     }
 };
 const GLOB_NOTES = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
+const GLOB_NATURAL_NOTES = ["C", "D", "E", "F", "G", "A", "B"];
 const GLOB_FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 function noteAtOffset(rootNote, offset) {

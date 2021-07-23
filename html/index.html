@@ -262,10 +262,10 @@ function drawNoteSymbol(ctx, x, y, height, shaftUp) {
 
     // Draw note "shaft"
     ctx.beginPath();
-    var shaftWidth = height * 0.1;
-    var shaftHeight = height * 4;
     var shaftXOffset = radiusX * Math.cos(rotation);
     var shaftYOffset = radiusX * Math.sin(rotation);
+    var shaftWidth = height * 0.1;
+    var shaftHeight = height * 4 + shaftYOffset;
     var shaftX = x + shaftXOffset - shaftWidth;
     var shaftY = y + shaftYOffset - shaftHeight;
     if (shaftUp == false) {
@@ -279,14 +279,47 @@ function drawNoteSymbol(ctx, x, y, height, shaftUp) {
 }
 
 function drawNotes(canvasId, clef = "G") {
+    const NOTE_SPACE = 4;
+    const NOTE_LINES = 5;
+    const NOTE_LINE_SPACE = NOTE_SPACE * 2;
+    const NOTE_LINE_OFFSET = NOTE_LINE_SPACE * 7;
+    const NOTE_COUNT = 24;
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
-    canvas.height = 200;
+    canvas.height = NOTE_SPACE * NOTE_LINES + NOTE_LINE_OFFSET * 2;
+    const NOTE_SPREAD = canvas.width / (NOTE_COUNT + 1);
 
     var ctx = canvas.getContext("2d");
-    drawNoteSymbol(ctx, 100, 100, 20, true);
-    drawNoteSymbol(ctx, 200, 100, 20, false);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw note lines
+    for (var i = 0 ; i < NOTE_LINES ; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, NOTE_LINE_SPACE * i + NOTE_LINE_OFFSET);
+        ctx.lineTo(canvas.width, NOTE_LINE_SPACE * i + NOTE_LINE_OFFSET);
+        ctx.stroke();         
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw notes
+    var noteY = NOTE_LINE_OFFSET + NOTE_SPACE * 15;
+    var noteX = NOTE_SPREAD;
+    var shaftUp = true;
+    for (var i = 0 ; i < NOTE_COUNT ; i++) {
+        if (noteY < (NOTE_LINE_OFFSET + 2 * NOTE_LINE_SPACE))
+            shaftUp = false;
+        else   
+            shaftUp = true;
+        drawNoteSymbol(ctx, noteX, noteY, NOTE_LINE_SPACE, shaftUp);
+        noteX += NOTE_SPREAD;
+        noteY -= NOTE_SPACE;
+    }
+    /*
+    drawNoteSymbol(ctx, 50, NOTE_SPACE * 3 + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, false);
+    drawNoteSymbol(ctx, 100, NOTE_SPACE * 5 + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, true);
+    drawNoteSymbol(ctx, 150, NOTE_SPACE * 5 + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, true);
+    drawNoteSymbol(ctx, 200, NOTE_SPACE + NOTE_LINE_OFFSET, NOTE_LINE_SPACE, false);*/
 }
 
 //////////////////////////////////////////////////////////////////////////////

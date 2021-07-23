@@ -87,8 +87,11 @@
 // Misc
 
 var globChordNotes = [];
+var globClef = "";
+var globClefOctaveOffset = 0;
 
 window.onload = function() {
+    notesSetup();
     tabSetup();
     chordSetup();
     savedChordSetup();
@@ -98,7 +101,7 @@ window.onload = function() {
 }
 
 function updateDisplay() {
-    drawNotes("chord-guitar-notes", "G-clef (treble)", -1);
+    drawNotes("guitar-notes", globClef, globClefOctaveOffset);
     drawFretBoard("guitar-fretboard");
     drawFretBoard("chord-guitar-fretboard", globChordNotes);
 }
@@ -136,6 +139,25 @@ const GLOB_CLEF_TYPES = {
         "octave" : 3
     }
 };
+
+function notesSetup() {
+    // Update clef selection
+    var clefSelect = document.getElementById("guitar-notes-clef");
+    for (type in GLOB_CLEF_TYPES) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", type);
+        elemOption.innerText = type;
+        clefSelect.appendChild(elemOption);
+    }
+    globClef = document.getElementById("guitar-notes-clef").value;
+    globClefOctaveOffset = parseInt(document.getElementById("guitar-notes-octave-offset").value);
+}
+
+function noteClefSelect() {
+    globClef = document.getElementById("guitar-notes-clef").value;
+    globClefOctaveOffset = parseInt(document.getElementById("guitar-notes-octave-offset").value);
+    updateDisplay();
+}
 
 function drawFretBoard(canvasId, noteFilter = []) {
     var canvas = document.getElementById(canvasId);
@@ -442,9 +464,9 @@ function drawNotes(canvasId, clef, octaveOffset) {
         } 
         // Draw note name (possible offset)
         ctx.fillStyle = "white"; 
-        ctx.fillText("██", fretX, fretY + STRING_SPACE * STRING_COUNT); // Background color
+        ctx.fillText("██", fretX, fretY + STRING_SPACE * STRING_COUNT + STRING_SPACE / 2); // Background color
         ctx.fillStyle = "black"; 
-        ctx.fillText(note + octave, fretX,  fretY + STRING_SPACE * STRING_COUNT);   
+        ctx.fillText(note + octave, fretX,  fretY + STRING_SPACE * STRING_COUNT + STRING_SPACE / 2);   
 
         fretX += NOTE_SPREAD;
 
@@ -1337,7 +1359,16 @@ function URLSearchParamSet(key, value, reloadPage) {
     <!-- Tones TAB -->
     <div class="tab-page" id="tab-notes-page">
         <canvas id="guitar-fretboard"></canvas>
-        <canvas id="chord-guitar-notes"></canvas>
+        <hr>
+        <select id="guitar-notes-clef" onchange="noteClefSelect()"></select>
+        <select id="guitar-notes-octave-offset" onchange="noteClefSelect()">
+            <option value="-2">Octave -2</option>
+            <option value="-1" selected>Octave -1</option>
+            <option value="0">Octave as clef</option>
+            <option value="1">Octave +1</option>
+            <option value="1">Octave +2</option>
+        </select>
+        <canvas id="guitar-notes"></canvas>
     </div>
 
     <!----------------------------------------------------------------------------------->

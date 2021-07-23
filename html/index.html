@@ -98,7 +98,7 @@ window.onload = function() {
 }
 
 function updateDisplay() {
-    drawNotes("chord-guitar-notes", "G-clef (treble)");
+    drawNotes("chord-guitar-notes", "G-clef (treble)", -1);
     drawFretBoard("guitar-fretboard");
     drawFretBoard("chord-guitar-fretboard", globChordNotes);
 }
@@ -293,19 +293,20 @@ function drawNoteSymbol(ctx, x, y, height, shaftUp) {
 
 }
 
-function drawNotes(canvasId, clef) {
+function drawNotes(canvasId, clef, octaveOffset) {
     const NOTE_SPACE = 4;
     const NOTE_LINES = 5;
     const NOTE_LINE_SPACE = NOTE_SPACE * 2;
     const NOTE_LINE_OFFSET = NOTE_LINE_SPACE * 7;
     const NOTE_COUNT = 24;
     const FIRST_NOTE_Y = NOTE_LINE_OFFSET + NOTE_SPACE * 15;
-    const TAB_OFFSET = FIRST_NOTE_Y + NOTE_LINE_SPACE * 3;
+    const STRING_SPACE = 12;
+    const TAB_OFFSET = FIRST_NOTE_Y + STRING_SPACE * 3;
     const STRING_COUNT = settingsGetTuningNotes().length;
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
-    canvas.height = TAB_OFFSET + NOTE_LINE_SPACE * (STRING_COUNT + 1);
+    canvas.height = TAB_OFFSET + STRING_SPACE * (STRING_COUNT + 1);
     const NOTE_SPREAD = canvas.width / (NOTE_COUNT + 1);
 
     var ctx = canvas.getContext("2d");
@@ -329,8 +330,8 @@ function drawNotes(canvasId, clef) {
     // Draw guitar strings
     for (var i = 0 ; i < STRING_COUNT ; i++) {
         ctx.beginPath();
-        ctx.moveTo(0, NOTE_LINE_SPACE * i + TAB_OFFSET);
-        ctx.lineTo(canvas.width, NOTE_LINE_SPACE * i + TAB_OFFSET);
+        ctx.moveTo(0, STRING_SPACE * i + TAB_OFFSET);
+        ctx.lineTo(canvas.width, STRING_SPACE * i + TAB_OFFSET);
         ctx.stroke();         
     }
 
@@ -341,6 +342,8 @@ function drawNotes(canvasId, clef) {
     var noteY = FIRST_NOTE_Y;
     var noteX = NOTE_SPREAD;
     var shaftUp = true;
+    var notes = []; // Used for frets later
+    var octaves = []; // Used for frets later
     for (var i = 0 ; i < NOTE_COUNT ; i++) {
         if (noteY < (NOTE_LINE_OFFSET + 2 * NOTE_LINE_SPACE))
             shaftUp = false;
@@ -393,19 +396,58 @@ function drawNotes(canvasId, clef) {
             }
         }
         var note = GLOB_NATURAL_NOTES[index];
+        notes.push(note);
+        octaves.push(octave); 
 
         //////////////////////////////////
         // Draw note name
         ctx.font = Math.round(NOTE_LINE_SPACE * 1.2) + "px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        var textY = noteY - NOTE_LINE_SPACE * 1.2;
+        var textY = noteY - NOTE_LINE_SPACE * 1.4;
         if (shaftUp)
-            textY = noteY + NOTE_LINE_SPACE * 1.2;
+            textY = noteY + NOTE_LINE_SPACE * 1.4;
+        
+        ctx.fillStyle = "white"; 
+        ctx.fillText("██", noteX, textY); // Background color
+        ctx.fillStyle = "black"; 
         ctx.fillText(note + octave, noteX, textY);        
 
         noteX += NOTE_SPREAD;
         noteY -= NOTE_SPACE;
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Draw frets
+    var fretY = TAB_OFFSET;
+    var fretX = NOTE_SPREAD;
+    for (var i = 0 ; i < NOTE_COUNT ; i++) {
+        var note = notes[i];
+        var octave = octaves[i] + octaveOffset;
+        for (var string = 0 ; string < STRING_COUNT ; string++) {
+            var theFret = -1;
+            for (var fret = 0 ; fret < GLOB_FRET_MAX ; fret++) {
+                if ((noteAt(fret,string) == note) && (octaveAt(fret,string) == octave)) {
+                    theFret = fret;
+                    break;
+                }
+            }
+            if (theFret != -1) {
+                ctx.fillStyle = "white"; 
+                ctx.fillText("██", fretX, fretY + STRING_SPACE * string); // Background color
+                ctx.fillStyle = "black"; 
+                ctx.fillText(theFret, fretX, fretY + STRING_SPACE * string);
+            }
+        } 
+        // Draw note name (possible offset)
+        ctx.fillStyle = "white"; 
+        ctx.fillText("██", fretX, fretY + STRING_SPACE * STRING_COUNT); // Background color
+        ctx.fillStyle = "black"; 
+        ctx.fillText(note + octave, fretX,  fretY + STRING_SPACE * STRING_COUNT);   
+
+        fretX += NOTE_SPREAD;
+
     }
 }
 
@@ -1047,6 +1089,7 @@ const GLOB_STD_TUNINGS = {
 const GLOB_NOTES = ["C", "C♮/D♭", "D", "D♮/E♭", "E", "F", "F♮/G♭", "G", "G♮/A♭","A", "A♮/B♭", "B"];
 const GLOB_NATURAL_NOTES = ["C", "D", "E", "F", "G", "A", "B"];
 const GLOB_FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+const GLOB_FRET_MAX = 24;
 
 function noteAtOffset(rootNote, offset) {
     var index = GLOB_NOTES.indexOf(rootNote);

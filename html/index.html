@@ -147,21 +147,34 @@ const GLOB_CLEF_TYPES = {
 };
 
 function notesSetup() {
+    // Get saved value
+    globClef = URLSearchParamGet("clef", "G-clef (treble)");
+    globClefOctaveOffset = parseInt(URLSearchParamGet("clef-octave", "-1"));
+
     // Update clef selection
     var clefSelect = document.getElementById("guitar-notes-clef");
     for (type in GLOB_CLEF_TYPES) {
         var elemOption = document.createElement("option");
         elemOption.setAttribute("value", type);
         elemOption.innerText = type;
+        if (type == globClef)
+            elemOption.setAttribute("selected", "");
         clefSelect.appendChild(elemOption);
     }
-    globClef = document.getElementById("guitar-notes-clef").value;
-    globClefOctaveOffset = parseInt(document.getElementById("guitar-notes-octave-offset").value);
+
+    // Update octave selection
+    var clefOctaveOpts = document.getElementById("guitar-notes-octave-offset").children;
+    for (var i = 0 ; i < clefOctaveOpts.length ; i++) {
+        if (parseInt(clefOctaveOpts[i].getAttribute("value")) == globClefOctaveOffset)
+            clefOctaveOpts[i].setAttribute("selected", "");
+    }
 }
 
 function noteClefSelect() {
     globClef = document.getElementById("guitar-notes-clef").value;
     globClefOctaveOffset = parseInt(document.getElementById("guitar-notes-octave-offset").value);
+    URLSearchParamSet("clef", globClef, false);
+    URLSearchParamSet("clef-octave", globClefOctaveOffset.toString(), false);
     updateDisplay();
 }
 
@@ -331,7 +344,7 @@ function drawNotes(canvasId, clef, octaveOffset) {
     const STRING_SPACE = 12;
     const TAB_OFFSET = FIRST_NOTE_Y + STRING_SPACE * 3;
     const STRING_COUNT = settingsGetTuningNotes().length;
-    const LEFT_OFFSET = 60;
+    const LEFT_OFFSET = 50;
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);

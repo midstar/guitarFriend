@@ -127,16 +127,22 @@ function playSound(frequency, type) {
 
 const GLOB_CLEF_TYPES = {
     "G-clef (treble)" : {
-        "note"   : "E", // At bottom bar
-        "octave" : 4
+        "note"             : "E", // At bottom bar
+        "octave"           : 4,
+        "sym-start-offset" : 0.4, // In %
+        "sym-end-offset"   : 0.4   // In %
     },
     "F-clef (bass)" : {
-        "note"   : "G", // At bottom bar
-        "octave" : 2
+        "note"             : "G", // At bottom bar
+        "octave"           : 2,
+        "sym-start-offset" : 0, // In %
+        "sym-end-offset"   : -0.2  // In %
     },
     "C-clef (alto)" : {
-        "note"   : "F", // At bottom bar
-        "octave" : 3
+        "note"             : "F", // At bottom bar
+        "octave"           : 3,
+        "sym-start-offset" : 0,  // In %
+        "sym-end-offset"   : 0 // In %
     }
 };
 
@@ -325,6 +331,7 @@ function drawNotes(canvasId, clef, octaveOffset) {
     const STRING_SPACE = 12;
     const TAB_OFFSET = FIRST_NOTE_Y + STRING_SPACE * 3;
     const STRING_COUNT = settingsGetTuningNotes().length;
+    const LEFT_OFFSET = 60;
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
@@ -357,12 +364,24 @@ function drawNotes(canvasId, clef, octaveOffset) {
         ctx.stroke();         
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    // Insert clef symbol
+    var symStartOffset = GLOB_CLEF_TYPES[clef]["sym-start-offset"];
+    var symEndOffset = GLOB_CLEF_TYPES[clef]["sym-end-offset"];
+    var clefImg = document.getElementById(clef.replace(" ", "-"));
+    var height = NOTE_LINE_SPACE * (NOTE_LINES - 1);
+    var startOffset = height * symStartOffset;
+    var endOffset = height * symEndOffset;
+    height = height + startOffset + endOffset;
+    // Keep aspect ratio
+    var width = height * (clefImg.width / clefImg.height);
+    ctx.drawImage(clefImg, NOTE_LINE_OFFSET * 0.1, NOTE_LINE_OFFSET - startOffset, width, height);
 
 
     //////////////////////////////////////////////////////////////////////////
     // Draw notes
     var noteY = FIRST_NOTE_Y;
-    var noteX = NOTE_SPREAD;
+    var noteX = LEFT_OFFSET;
     var shaftUp = true;
     var notes = []; // Used for frets later
     var octaves = []; // Used for frets later
@@ -443,7 +462,7 @@ function drawNotes(canvasId, clef, octaveOffset) {
     //////////////////////////////////////////////////////////////////////////
     // Draw frets
     var fretY = TAB_OFFSET;
-    var fretX = NOTE_SPREAD;
+    var fretX = LEFT_OFFSET;
     for (var i = 0 ; i < NOTE_COUNT ; i++) {
         var note = notes[i];
         var octave = octaves[i] + octaveOffset;
@@ -1356,7 +1375,7 @@ function URLSearchParamSet(key, value, reloadPage) {
     </div>
 
     <!----------------------------------------------------------------------------------->
-    <!-- Tones TAB -->
+    <!-- Notes TAB -->
     <div class="tab-page" id="tab-notes-page">
         <canvas id="guitar-fretboard"></canvas>
         <hr>
@@ -1369,6 +1388,11 @@ function URLSearchParamSet(key, value, reloadPage) {
             <option value="1">Octave +2</option>
         </select>
         <canvas id="guitar-notes"></canvas>
+        <div style="display: none">
+            <img src="G-clef-(treble).png" id="G-clef-(treble)">
+            <img src="F-clef-(bass).png" id="F-clef-(bass)">
+            <img src="C-clef-(alto).png" id="C-clef-(alto)">
+        </div>
     </div>
 
     <!----------------------------------------------------------------------------------->

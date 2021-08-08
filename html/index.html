@@ -339,17 +339,20 @@ function drawNotes(canvasId, clef, octaveOffset) {
     const NOTE_LINES = 5;
     const NOTE_LINE_SPACE = NOTE_SPACE * 2;
     const NOTE_LINE_OFFSET = NOTE_LINE_SPACE * 7;
-    const NOTE_COUNT = 24;
-    const FIRST_NOTE_Y = NOTE_LINE_OFFSET + NOTE_SPACE * 15;
     const STRING_SPACE = 12;
-    const TAB_OFFSET = FIRST_NOTE_Y + STRING_SPACE * 3;
     const STRING_COUNT = settingsGetTuningNotes().length;
     const LEFT_OFFSET = 50;
     var canvas = document.getElementById(canvasId);
     var parentStyle = window.getComputedStyle(canvas.parentElement);
     canvas.width = parseFloat(parentStyle.width);
+    // Adjust number of notes depending on width
+    const MIN_NOTE_WIDTH = NOTE_LINE_SPACE * 2.5;
+    const NOTE_COUNT = Math.min(25, Math.floor((canvas.width - LEFT_OFFSET) / MIN_NOTE_WIDTH));
+    const START_NOTE = Math.floor((NOTE_COUNT - 7) / 2 + 7);
+    const FIRST_NOTE_Y = NOTE_LINE_OFFSET + NOTE_SPACE * START_NOTE;
+    const TAB_OFFSET = FIRST_NOTE_Y + STRING_SPACE * 3;
     canvas.height = TAB_OFFSET + STRING_SPACE * (STRING_COUNT + 1);
-    const NOTE_SPREAD = canvas.width / (NOTE_COUNT + 1);
+    const NOTE_SPREAD = (canvas.width - LEFT_OFFSET) / (NOTE_COUNT);
 
     var ctx = canvas.getContext("2d");
 

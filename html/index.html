@@ -68,7 +68,7 @@
 
 /****************************************************************************/
 /* Misc style */
-#chord-notes {
+#chord-notes, #scale-notes {
     display: inline;
 }
 
@@ -87,6 +87,7 @@
 // Misc
 
 var globChordNotes = [];
+var globScaleNotes = [];
 var globClef = "";
 var globClefOctaveOffset = 0;
 
@@ -94,6 +95,7 @@ window.onload = function() {
     notesSetup();
     tabSetup();
     chordSetup();
+    scaleSetup();
     savedChordSetup();
     settingsSetup();
     updateDisplay();
@@ -104,6 +106,7 @@ function updateDisplay() {
     drawNotes("guitar-notes", globClef, globClefOctaveOffset);
     drawFretBoard("guitar-fretboard");
     drawFretBoard("chord-guitar-fretboard", globChordNotes);
+    drawFretBoard("scale-guitar-fretboard", globScaleNotes);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -986,7 +989,7 @@ function chordSetup() {
         rootNoteSelect.appendChild(elemOption);
     });
    
-    // Update chord root note selection
+    // Update chord type selection
     var chordTypeSelect = document.getElementById("chord-select-type");
     for (type in GLOB_CHORD_TYPES) {
         var elemOption = document.createElement("option");
@@ -1009,6 +1012,14 @@ function chordSetup() {
     chordSelect();
 }
 
+function chordName(rootNote, chordType) {
+    var label = rootNote;
+    if (rootNote.includes("/"))
+        label = rootNote.split("/")[0];
+    label = label + GLOB_CHORD_TYPES[chordType]["suffix"];
+    return label;
+}
+
 function chordSelect() {
     var rootNote = document.getElementById("chord-select-root-note").value;
     var chordType = document.getElementById("chord-select-type").value;
@@ -1023,10 +1034,7 @@ function chordSelect() {
     var chordNotesElem = document.getElementById("chord-notes");
     chordNotesElem.innerText = notes;
     var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 4, rootNotePos == "first");
-    var label = rootNote;
-    if (rootNote.includes("/"))
-        label = rootNote.split("/")[0];
-    label = label + GLOB_CHORD_TYPES[chordType]["suffix"];
+    var label = chordName(rootNote, chordType);
     var chordsPage = document.getElementById("chord-charts");
     chordsPage.innerHTML = ""; // Remove all old charts
     chordCharts.forEach(function(strings) {
@@ -1039,6 +1047,99 @@ function chordSelect() {
     globChordNotes = notes; // Needed for guitar notes
     updateDisplay();
 }
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// TAB scales
+
+const GLOB_SCALE_TYPES = {
+    "major" : {
+        "interval" : [2, 4, 5, 7, 9, 11],
+        "chord" : ["major", "minor", "minor", "major", "major", "minor", "major"]
+    },
+    "minor" : {
+        "interval" : [2, 3, 5, 7, 8, 10],
+        "chord" : ["minor", "major", "major", "minor", "minor", "major", "major"]
+    }
+};
+
+// Get involved notes in a scale
+function scaleNotes(keyNote,scaleType) {
+    var result = [keyNote];
+    GLOB_SCALE_TYPES[scaleType]["interval"].forEach(function(noteOffset){
+        result.push(noteAtOffset(keyNote, noteOffset));
+    });
+    return result;
+}
+
+// Get involved chords in a scale
+function scaleChords(keyNote,scaleType) {
+    var rootNotes = scaleNotes(keyNote,scaleType)
+    var result = [];
+    var i = 0;
+    GLOB_SCALE_TYPES[scaleType]["chord"].forEach(function(chordType){
+        result.push(chordName(rootNotes[i], chordType));
+        i++;
+    });
+    return result;
+}
+
+function scaleSetup() {
+    var keyNote = URLSearchParamGet("key_note");
+    var scaleType = URLSearchParamGet("scale_type");
+
+    // Update scale key note selection
+    var keyNoteSelect = document.getElementById("scale-select-key-note");
+    GLOB_NOTES.forEach(function (note) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", note);
+        elemOption.innerText = note;
+        if (keyNote == note)
+            elemOption.setAttribute("selected", "");
+            keyNoteSelect.appendChild(elemOption);
+    });
+   
+    // Update scale type selection
+    var scaleTypeSelect = document.getElementById("scale-select-type");
+    for (type in GLOB_SCALE_TYPES) {
+        var elemOption = document.createElement("option");
+        elemOption.setAttribute("value", type);
+        elemOption.innerText = type;
+        if (scaleType == type)
+            elemOption.setAttribute("selected", "");
+        scaleTypeSelect.appendChild(elemOption);
+    }
+
+    scaleSelect();
+}
+
+function scaleSelect() {
+
+    var keyNote = document.getElementById("scale-select-key-note").value;
+    var scaleType = document.getElementById("scale-select-type").value;
+
+    // Save
+    URLSearchParamSet("key_note", keyNote, false);
+    URLSearchParamSet("scale_type", scaleType, false);
+
+    var notes = scaleNotes(keyNote,scaleType);
+    var scaleNotesElem = document.getElementById("scale-notes");
+    scaleNotesElem.innerText = notes;
+
+
+    var chords = scaleChords(keyNote,scaleType);
+    var scaleChordsElem = document.getElementById("scale-chords");
+    scaleChordsElem.innerText = chords;
+
+    globScaleNotes = notes; // Needed for guitar notes
+    updateDisplay();
+}
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 // TAB saved
@@ -1384,8 +1485,9 @@ function URLSearchParamSet(key, value, reloadPage) {
 <body>
 
     <div class="tab">
-        <button class="tab-button" id="tab-notes">NOTES</button>
-        <button class="tab-button" id="tab-chords">CHORDS</button>
+        <button class="tab-button" id="tab-notes">NOTE</button>
+        <button class="tab-button" id="tab-chords">CHORD</button>
+        <button class="tab-button" id="tab-scales">SCALE</button>
         <button class="tab-button" id="tab-saved">SAVED</button>
         <button class="tab-button" id="tab-settings">&#9881;</button>
     </div>
@@ -1426,6 +1528,19 @@ function URLSearchParamSet(key, value, reloadPage) {
         <div id="chord-charts"></div>
         <canvas id="chord-guitar-fretboard"></canvas>
     </div>
+
+    <!----------------------------------------------------------------------------------->
+    <!-- Scales TAB -->
+    <div class="tab-page" id="tab-scales-page">
+        <div>
+            <select id="scale-select-key-note" onchange="scaleSelect()"></select>
+            <select id="scale-select-type" onchange="scaleSelect()"></select>
+            <div id="scale-notes"></div>
+        </div>
+        <div id="scale-chords"></div>
+        <canvas id="scale-guitar-fretboard"></canvas>
+    </div>
+
 
     <!----------------------------------------------------------------------------------->
     <!-- Saved TAB -->

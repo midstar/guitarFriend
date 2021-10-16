@@ -72,6 +72,10 @@
     display: inline;
 }
 
+#scale-chords {
+    margin-top: 10px;
+}
+
 .chord-chart {
     margin-top: 5px;
 }
@@ -1058,11 +1062,11 @@ function chordSelect() {
 const GLOB_SCALE_TYPES = {
     "major" : {
         "interval" : [2, 4, 5, 7, 9, 11],
-        "chord" : ["major", "minor", "minor", "major", "major", "minor", "major"]
+        "chord" : ["major", "minor", "minor", "major", "major", "minor", "diminished"]
     },
     "minor" : {
         "interval" : [2, 3, 5, 7, 8, 10],
-        "chord" : ["minor", "major", "major", "minor", "minor", "major", "major"]
+        "chord" : ["minor", "diminished", "major", "minor", "minor", "major", "major"]
     }
 };
 

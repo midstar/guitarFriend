@@ -83,6 +83,35 @@
     cursor: grab;
 }
 
+/****************************************************************************/
+/* HTML note styles (not fretboard style) */
+.note {
+    border-style: solid;
+    border-color: black;
+    border-width: 1px;
+    float:left;
+    border-radius: 10px;
+    font-size: 15px;
+    width: 20px;
+    padding: 1px 0;
+    margin-left: 2px;
+    margin-top: 4px;
+    text-align: center;
+}
+
+.note-sharp {
+    border-style: solid;
+    border-color: black;
+    border-width: 1px;
+    float:left;
+    font-size: 10px;
+    width: 40px;
+    padding: 3px 0;
+    margin-left: 2px;
+    margin-top: 4px;
+    text-align: center;
+}
+
 </style>
 </head>
 <script>
@@ -259,33 +288,8 @@ function drawFretBoard(canvasId, noteFilter = []) {
                     continue; // Filtered out
             }
 
-            var backgroundColor= "white";
-            var textColor = "black";
-            switch (note) {
-                case "A":
-                    backgroundColor = "lightblue"; 
-                    break; 
-                case "B":
-                    backgroundColor = "lightgreen"; 
-                    break; 
-                case "C":
-                    backgroundColor = "lightpink"; 
-                    break; 
-                case "D":
-                    backgroundColor = "lightgray"; 
-                    break; 
-                case "E":
-                    backgroundColor = "lightyellow"; 
-                    break; 
-                case "F":
-                    backgroundColor = "fuchsia"; 
-                    break; 
-                case "G":
-                    backgroundColor = "lightsalmon"; 
-                    break; 
-            }
             ctx.beginPath();
-            ctx.fillStyle = backgroundColor;
+            ctx.fillStyle = noteColor(note);
             var noteText = note;
             if (note.includes("/")) {
                 var rectWidth = Math.round(FRET_SPACE * 0.8);
@@ -300,7 +304,7 @@ function drawFretBoard(canvasId, noteFilter = []) {
             ctx.stroke();
             ctx.fill();
 
-            ctx.fillStyle = textColor; 
+            ctx.fillStyle = "black"; 
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(noteText, centerX, centerY);
@@ -1035,8 +1039,7 @@ function chordSelect() {
     URLSearchParamSet("root_note_pos", rootNotePos, false);
 
     var notes = chordNotes(rootNote,chordType);
-    var chordNotesElem = document.getElementById("chord-notes");
-    chordNotesElem.innerText = notes;
+    drawNoteList("chord-notes", notes)
     var chordCharts = chordChartFinderMultiplePos(notes, 1, 24, 4, rootNotePos == "first");
     var label = chordName(rootNote, chordType);
     var chordsPage = document.getElementById("chord-charts");
@@ -1130,8 +1133,7 @@ function scaleSelect() {
     URLSearchParamSet("scale_type", scaleType, false);
 
     var notes = scaleNotes(keyNote,scaleType);
-    var scaleNotesElem = document.getElementById("scale-notes");
-    scaleNotesElem.innerText = notes;
+    drawNoteList("scale-notes", notes);
 
 
     var chords = scaleChords(keyNote,scaleType);
@@ -1485,6 +1487,46 @@ function URLSearchParamSet(key, value, reloadPage) {
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Other common functions
+
+function noteColor(note) {
+    switch (note) {
+        case "A":
+            return "lightblue"; 
+        case "B":
+            return "lightgreen"; 
+        case "C":
+            return "lightpink"; 
+        case "D":
+            return "lightgray"; 
+        case "E":
+            return "lightyellow"; 
+        case "F":
+            return "fuchsia"; 
+        case "G":
+            return "lightsalmon"; 
+    }  
+    return "white"; 
+}
+
+function drawNoteList(elementID, notes) {
+    var parent = document.getElementById(elementID);
+    parent.innerHTML = ""; // Clear
+    notes.forEach(function(note){
+        var elemNote = document.createElement("div");
+        elemNote.innerText = note;
+        if (note.includes("/")) {
+            elemNote.setAttribute("class", "note-sharp");
+        } else {
+            elemNote.setAttribute("class", "note");
+        }
+        elemNote.style.backgroundColor = noteColor(note);
+        parent.appendChild(elemNote);
+    });
+}
+
+
 </script>
 <body>
 
@@ -1527,8 +1569,9 @@ function URLSearchParamSet(key, value, reloadPage) {
                 <option value="first" selected>Root note first</option>
                 <option value="anywhere">Root anywhere (ukelele style)</option>
             </select>
-            <div id="chord-notes"></div>
         </div>
+        <div class="notes" id="chord-notes"></div>
+        <br>
         <div id="chord-charts"></div>
         <canvas id="chord-guitar-fretboard"></canvas>
     </div>
@@ -1539,8 +1582,9 @@ function URLSearchParamSet(key, value, reloadPage) {
         <div>
             <select id="scale-select-key-note" onchange="scaleSelect()"></select>
             <select id="scale-select-type" onchange="scaleSelect()"></select>
-            <div id="scale-notes"></div>
         </div>
+        <div class="notes" id="scale-notes"></div>
+        <br>
         <div id="scale-chords"></div>
         <canvas id="scale-guitar-fretboard"></canvas>
     </div>

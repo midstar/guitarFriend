@@ -85,31 +85,27 @@
 
 /****************************************************************************/
 /* HTML note styles (not fretboard style) */
-.note {
+.note, .note-sharp {
+    display: inline-block;
     border-style: solid;
     border-color: black;
     border-width: 1px;
-    float:left;
-    border-radius: 10px;
-    font-size: 15px;
-    width: 20px;
-    padding: 1px 0;
     margin-left: 2px;
     margin-top: 4px;
     text-align: center;
 }
 
+.note {
+    border-radius: 10px;
+    font-size: 15px;
+    width: 20px;
+    padding: 1px 0;
+}
+
 .note-sharp {
-    border-style: solid;
-    border-color: black;
-    border-width: 1px;
-    float:left;
     font-size: 10px;
     width: 40px;
     padding: 3px 0;
-    margin-left: 2px;
-    margin-top: 4px;
-    text-align: center;
 }
 
 </style>
@@ -1570,8 +1566,7 @@ function drawNoteList(elementID, notes) {
                 <option value="anywhere">Root anywhere (ukelele style)</option>
             </select>
         </div>
-        <div class="notes" id="chord-notes"></div>
-        <br>
+        <div id="chord-notes"></div>
         <div id="chord-charts"></div>
         <canvas id="chord-guitar-fretboard"></canvas>
     </div>
@@ -1583,8 +1578,7 @@ function drawNoteList(elementID, notes) {
             <select id="scale-select-key-note" onchange="scaleSelect()"></select>
             <select id="scale-select-type" onchange="scaleSelect()"></select>
         </div>
-        <div class="notes" id="scale-notes"></div>
-        <br>
+        <div id="scale-notes"></div>
         <div id="scale-chords"></div>
         <canvas id="scale-guitar-fretboard"></canvas>
     </div>

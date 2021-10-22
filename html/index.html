@@ -72,10 +72,6 @@
     display: inline;
 }
 
-#scale-chords {
-    margin-top: 10px;
-}
-
 .chord-chart {
     margin-top: 5px;
 }
@@ -106,6 +102,26 @@
     font-size: 10px;
     width: 40px;
     padding: 3px 0;
+}
+
+/****************************************************************************/
+/* HTML chord styles (not fretboard style) */
+
+.chord {
+    display: inline-block;
+    background-color: azure;
+    border-style: solid;
+    border-color: black;
+    border-width: 1px;
+    border-radius: 3px;
+    margin-left: 2px;
+    margin-top: 4px;
+    /*margin: auto;*/
+    padding: 10px;
+    font-size: 15px;
+    height: 15px;
+    /*padding: 2px 2px 2px 2px;*/
+    text-align: center;
 }
 
 </style>
@@ -1133,8 +1149,7 @@ function scaleSelect() {
 
 
     var chords = scaleChords(keyNote,scaleType);
-    var scaleChordsElem = document.getElementById("scale-chords");
-    scaleChordsElem.innerText = chords;
+    drawChordList("scale-chords", chords);
 
     globScaleNotes = notes; // Needed for guitar notes
     updateDisplay();
@@ -1519,6 +1534,18 @@ function drawNoteList(elementID, notes) {
         }
         elemNote.style.backgroundColor = noteColor(note);
         parent.appendChild(elemNote);
+    });
+}
+
+function drawChordList(elementID, chords) {
+    var parent = document.getElementById(elementID);
+    parent.innerHTML = ""; // Clear
+    chords.forEach(function(chord){
+        var elemChord = document.createElement("div");
+        // ♮ makes font size get invalid
+        elemChord.innerText = chord.replace("♮", "#");
+        elemChord.setAttribute("class", "chord");
+        parent.appendChild(elemChord);
     });
 }
 
